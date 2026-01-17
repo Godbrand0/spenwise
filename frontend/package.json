@@ -1,0 +1,35 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "db:migrate": "echo 'Database migration would run here'",
+    "db:seed": "echo 'Database seeding would run here'"
+  },
+  "dependencies": {
+    "@google/generative-ai": "0.24.1",
+    "lucide-react": "0.562.0",
+    "next": "16.1.1",
+    "pdfjs-dist": "5.4.530",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "recharts": "3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
