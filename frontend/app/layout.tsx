@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Automatically extract transactions from bank statements, get AI-powered insights, and estimate tax obligations for Nigerian users.",
 };
 
+import { Navbar } from "@/components/Navbar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,8 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased pt-20`}
       >
+        <Navbar />
         {children}
       </body>
     </html>

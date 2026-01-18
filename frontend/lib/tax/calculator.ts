@@ -22,6 +22,10 @@ export interface TaxCalculationResult {
     amount: number;
     tax: number;
   }>;
+  // Tax status and exemptions
+  isTaxable: boolean;
+  taxExemptionReason?: string;
+  taxBadge: "tax-exempt" | "low-tax" | "standard-tax" | "high-tax";
 }
 
 // Default Nigerian tax configuration for 2026
@@ -40,25 +44,55 @@ export const defaultTaxConfig: TaxConfig = {
 
 export async function calculateTax(
   grossIncome: number,
-  taxConfig: TaxConfig = defaultTaxConfig
+  taxConfig: TaxConfig = defaultTaxConfig,
 ): Promise<TaxCalculationResult> {
+  // Check for tax exemptions
+  const exemptionCheck = checkTaxExemptions(grossIncome);
+
+  if (exemptionCheck.isExempt) {
+    return {
+      grossIncome,
+      taxableIncome: 0,
+      consolidatedReliefAllowance: 0,
+      personalAllowance: 0,
+      estimatedTax: 0,
+      effectiveRate: 0,
+      taxCalculationDetails: [],
+      isTaxable: false,
+      taxExemptionReason: exemptionCheck.reason,
+      taxBadge: exemptionCheck.badge,
+    };
+  }
+
   // Calculate consolidated relief allowance (20% of gross income, capped at ₦200,000)
   const consolidatedReliefAllowance = Math.min(
     (grossIncome * taxConfig.reliefAllowancePercent) / 100,
-    200000
+    200000,
   );
 
   // Calculate taxable income
   const taxableIncome = Math.max(
     0,
-    grossIncome - consolidatedReliefAllowance - taxConfig.personalAllowance
+    grossIncome - consolidatedReliefAllowance - taxConfig.personalAllowance,
   );
 
   // Calculate tax using progressive brackets
   const { totalTax, breakdown } = calculateProgressiveTax(
     taxableIncome,
-    taxConfig.taxBrackets
+    taxConfig.taxBrackets,
   );
+
+  // Determine tax badge based on effective rate
+  const effectiveRate = grossIncome > 0 ? (totalTax / grossIncome) * 100 : 0;
+  let taxBadge: "tax-exempt" | "low-tax" | "standard-tax" | "high-tax";
+
+  if (effectiveRate < 5) {
+    taxBadge = "low-tax";
+  } else if (effectiveRate < 15) {
+    taxBadge = "standard-tax";
+  } else {
+    taxBadge = "high-tax";
+  }
 
   return {
     grossIncome,
@@ -66,14 +100,41 @@ export async function calculateTax(
     consolidatedReliefAllowance,
     personalAllowance: taxConfig.personalAllowance,
     estimatedTax: totalTax,
-    effectiveRate: grossIncome > 0 ? (totalTax / grossIncome) * 100 : 0,
+    effectiveRate,
     taxCalculationDetails: breakdown,
+    isTaxable: true,
+    taxBadge,
+  };
+}
+
+// Check for tax exemptions based on new Nigerian tax law
+function checkTaxExemptions(grossIncome: number): {
+  isExempt: boolean;
+  reason?: string;
+  badge: "tax-exempt" | "low-tax" | "standard-tax" | "high-tax";
+} {
+  // Low-income individuals exemption (₦800,000 or less per year)
+  if (grossIncome <= 800000) {
+    return {
+      isExempt: true,
+      reason: "Low-income earner exemption (₦800,000 or less per year)",
+      badge: "tax-exempt",
+    };
+  }
+
+  // Small business exemption (₦100m or less per year in revenue)
+  // Note: This would need additional business data to fully implement
+  // For now, we'll focus on individual income exemptions
+
+  return {
+    isExempt: false,
+    badge: "standard-tax", // Default badge, will be updated in calculateTax
   };
 }
 
 function calculateProgressiveTax(
   taxableIncome: number,
-  brackets: TaxBracket[]
+  brackets: TaxBracket[],
 ): {
   totalTax: number;
   breakdown: Array<{ bracket: string; amount: number; tax: number }>;
@@ -90,7 +151,7 @@ function calculateProgressiveTax(
 
     const taxableInBracket = Math.min(
       taxableIncome - bracket.min,
-      bracketMax - bracket.min
+      bracketMax - bracket.min,
     );
 
     const taxForBracket = taxableInBracket * bracket.rate;
@@ -114,7 +175,7 @@ function calculateProgressiveTax(
 
 // Calculate monthly tax estimate from annual income
 export function calculateMonthlyTax(
-  annualIncome: number
+  annualIncome: number,
 ): Promise<TaxCalculationResult> {
   return calculateTax(annualIncome / 12);
 }
@@ -130,11 +191,11 @@ export interface IncomeBreakdown {
 
 export async function calculateTaxFromIncomeBreakdown(
   incomeBreakdown: IncomeBreakdown,
-  taxConfig: TaxConfig = defaultTaxConfig
+  taxConfig: TaxConfig = defaultTaxConfig,
 ): Promise<TaxCalculationResult> {
   const totalIncome = Object.values(incomeBreakdown).reduce(
     (sum, amount) => sum + amount,
-    0
+    0,
   );
   return calculateTax(totalIncome, taxConfig);
 }

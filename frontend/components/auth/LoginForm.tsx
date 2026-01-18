@@ -24,7 +24,7 @@ export const LoginForm: React.FC = () => {
     if (error) {
       setError(error.message);
     } else {
-      window.location.href = '/';
+      window.location.href = '/upload';
     }
     setLoading(false);
   };

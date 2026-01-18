@@ -1,15 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { useSearchParams } from 'next/navigation';
 
 type AuthView = 'login' | 'signup' | 'forgot-password';
 
-export default function AuthPage() {
+function AuthContent() {
+  const searchParams = useSearchParams();
   const [view, setView] = useState<AuthView>('login');
+
+  useEffect(() => {
+    const viewParam = searchParams.get('view') as AuthView;
+    if (viewParam && ['login', 'signup', 'forgot-password'].includes(viewParam)) {
+      setView(viewParam);
+    }
+  }, [searchParams]);
 
   const renderView = () => {
     switch (view) {
@@ -84,5 +93,19 @@ export default function AuthPage() {
     <AuthLayout title={getTitle()} subtitle={getSubtitle()}>
       {renderView()}
     </AuthLayout>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-[#00ff00] font-mono animate-pulse uppercase tracking-widest">
+          Establishing Secure Uplink...
+        </div>
+      </div>
+    }>
+      <AuthContent />
+    </Suspense>
   );
 }

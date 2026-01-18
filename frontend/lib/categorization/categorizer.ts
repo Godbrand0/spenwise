@@ -1,5 +1,6 @@
 import { callGemini } from "../ai/gemini-client";
 import { Transaction } from "../extraction/regex-parser";
+import { Category as DatabaseCategory } from "../database/types";
 
 export interface Category {
   id: number;
@@ -9,13 +10,33 @@ export interface Category {
   is_income: boolean;
 }
 
+// Helper function to convert database category to categorizer category
+export function convertToCategorizerCategory(
+  dbCategory: DatabaseCategory,
+): Category {
+  return {
+    id: parseInt(dbCategory.id), // Convert UUID string to number for compatibility
+    name: dbCategory.name,
+    keywords: dbCategory.keywords,
+    parent_category: dbCategory.parent_category,
+    is_income: dbCategory.is_income,
+  };
+}
+
 export async function categorizeTransactions(
   transactions: Transaction[],
-  userCategories: Category[] // From database
+  userCategories: DatabaseCategory[] | Category[], // From database
 ): Promise<(Transaction & { category?: string; confidence: number })[]> {
+  // Convert database categories to categorizer format if needed
+  const categories =
+    userCategories.length > 0 &&
+    "id" in userCategories[0] &&
+    typeof userCategories[0].id === "string"
+      ? (userCategories as DatabaseCategory[]).map(convertToCategorizerCategory)
+      : (userCategories as Category[]);
   // First, try keyword matching (free!)
   const withQuickMatch = transactions.map((t) => {
-    const match = findCategoryByKeyword(t.description, userCategories);
+    const match = findCategoryByKeyword(t.description, categories);
     return { ...t, category: match?.name, confidence: match ? 1.0 : 0 };
   });
 
@@ -26,19 +47,19 @@ export async function categorizeTransactions(
     return withQuickMatch;
   }
 
-  const aiCategorized = await categorizeWithAI(needsAI, userCategories);
+  const aiCategorized = await categorizeWithAI(needsAI, categories);
 
   // Merge results
   return withQuickMatch.map((t) =>
     t.category
       ? t
-      : aiCategorized.find((a) => a.description === t.description) || t
+      : aiCategorized.find((a) => a.description === t.description) || t,
   );
 }
 
 async function categorizeWithAI(
   transactions: Transaction[],
-  allowedCategories: Category[]
+  allowedCategories: Category[],
 ): Promise<(Transaction & { category?: string; confidence: number })[]> {
   const categoryList = allowedCategories.map((c) => c.name).join(", ");
 
@@ -67,7 +88,7 @@ ${JSON.stringify(
     amount: t.amount,
     type: t.type,
     is_income: t.is_income,
-  }))
+  })),
 )}
 `;
 
@@ -79,7 +100,7 @@ ${JSON.stringify(
 
     return transactions.map((t) => {
       const aiResult = aiResults.find(
-        (r: any) => r.description === t.description
+        (r: any) => r.description === t.description,
       );
       return {
         ...t,
@@ -100,7 +121,7 @@ ${JSON.stringify(
 
 function findCategoryByKeyword(
   description: string,
-  categories: Category[]
+  categories: Category[],
 ): Category | null {
   const lowerDesc = description.toLowerCase();
 

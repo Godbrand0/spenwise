@@ -3,42 +3,6 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">SpendWise AI</h1>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link
-                href="#features"
-                className="text-gray-700 hover:text-blue-600"
-              >
-                Features
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="text-gray-700 hover:text-blue-600"
-              >
-                How It Works
-              </Link>
-              <Link href="/tax" className="text-gray-700 hover:text-blue-600">
-                Tax Estimates
-              </Link>
-            </nav>
-            <div className="flex space-x-4">
-              <Link
-                href="/upload"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
