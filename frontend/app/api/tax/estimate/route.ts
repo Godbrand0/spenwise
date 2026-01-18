@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { calculateTax, IncomeBreakdown } from "../../../../lib/tax/calculator";
-import { createServerClient } from "../../../../lib/database/client";
+import { calculateTax, IncomeBreakdown } from "@/lib/tax/calculator";
+import { createServerClient } from "@/lib/database/client";
 import {
   createTaxCalculation,
   getTaxCalculationsByUserId,
-} from "../../../../lib/database/utils";
+} from "@/lib/database/utils";
 
 export async function POST(req: NextRequest) {
   try {

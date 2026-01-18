@@ -1,6 +1,6 @@
-import { callGemini } from "../ai/gemini-client";
-import { Transaction } from "../extraction/regex-parser";
-import { Category as DatabaseCategory } from "../database/types";
+import { callGemini } from "@/lib/ai/gemini-client";
+import { Transaction } from "@/lib/extraction/regex-parser";
+import { Category as DatabaseCategory } from "@/lib/database/types";
 
 export interface Category {
   id: number;

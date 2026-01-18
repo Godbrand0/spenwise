@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { calculateTax, formatNaira } from "../../../lib/tax/calculator";
-import TaxBadge from "../../../components/tax/TaxBadge";
+import { calculateTax, formatNaira } from "@/lib/tax/calculator";
+import TaxBadge from "@/components/tax/TaxBadge";
 
 export default function TaxCalculatorPage() {
   const [incomeBreakdown, setIncomeBreakdown] = useState({

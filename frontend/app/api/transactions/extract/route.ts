@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractTransactions } from "../../../../lib/extraction/hybrid-extractor";
+import { extractTransactions } from "@/lib/extraction/hybrid-extractor";
 import {
   categorizeTransactions,
   defaultCategories,
-} from "../../../../lib/categorization/categorizer";
-import { createServerClient } from "../../../../lib/database/client";
-import {
-  createTransactions,
-  getCategories,
-} from "../../../../lib/database/utils";
+} from "@/lib/categorization/categorizer";
+import { createServerClient } from "@/lib/database/client";
+import { createTransactions, getCategories } from "@/lib/database/utils";
 
 export async function POST(req: NextRequest) {
   try {

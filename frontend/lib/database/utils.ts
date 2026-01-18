@@ -1,4 +1,4 @@
-import { createServerClient } from "./client";
+import { createServerClient } from "@/lib/database/client";
 import {
   User,
   Category,
@@ -13,7 +13,7 @@ import {
   CreateFinancialTodoInput,
   UpdateFinancialTodoInput,
   TaxCalculationInput,
-} from "./types";
+} from "@/lib/database/types";
 
 // Server-side Supabase client
 const supabase = createServerClient();

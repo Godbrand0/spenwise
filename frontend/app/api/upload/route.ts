@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
-import { createServerClient } from "../../../lib/database/client";
-import { createStatement } from "../../../lib/database/utils";
+import { createServerClient } from "@/lib/database/client";
+import { createStatement } from "@/lib/database/utils";
 
 // Set worker source
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.legacy.min.js`;

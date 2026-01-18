@@ -4,7 +4,7 @@ import {
   createFinancialTodo,
   updateFinancialTodo,
   deleteFinancialTodo,
-} from "../../../../lib/database/utils";
+} from "@/lib/database/utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       is_recurring: isRecurring || false,
       recurring_frequency: recurringFrequency || null,
       tags: tags || [],
+      status: "pending" as const,
     };
 
     const { data: todo, error } = await createFinancialTodo(todoData);
