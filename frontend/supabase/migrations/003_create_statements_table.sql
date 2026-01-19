@@ -32,17 +32,21 @@ CREATE INDEX IF NOT EXISTS idx_statements_created_at ON statements(created_at);
 ALTER TABLE statements ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own statements
+DROP POLICY IF EXISTS "Users can view own statements" ON statements;
 CREATE POLICY "Users can view own statements" ON statements
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can insert their own statements
+DROP POLICY IF EXISTS "Users can insert own statements" ON statements;
 CREATE POLICY "Users can insert own statements" ON statements
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own statements
+DROP POLICY IF EXISTS "Users can update own statements" ON statements;
 CREATE POLICY "Users can update own statements" ON statements
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Users can delete their own statements
+DROP POLICY IF EXISTS "Users can delete own statements" ON statements;
 CREATE POLICY "Users can delete own statements" ON statements
   FOR DELETE USING (auth.uid() = user_id);

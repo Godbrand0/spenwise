@@ -33,8 +33,13 @@ CREATE TABLE IF NOT EXISTS financial_todos (
   -- Metadata
   tags TEXT[] DEFAULT '{}',
   reminder_settings JSONB, -- Store reminder preferences
+  is_default BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Ensure unique todo titles per user and for default templates
+  UNIQUE(user_id, title),
+  UNIQUE(title, is_default)
 );
 
 -- Create indexes
@@ -50,10 +55,12 @@ CREATE INDEX IF NOT EXISTS idx_financial_todos_is_recurring ON financial_todos(i
 ALTER TABLE financial_todos ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own todos
+DROP POLICY IF EXISTS "Users can view own todos" ON financial_todos;
 CREATE POLICY "Users can view own todos" ON financial_todos
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can manage their own todos
+DROP POLICY IF EXISTS "Users can manage own todos" ON financial_todos;
 CREATE POLICY "Users can manage own todos" ON financial_todos
   FOR ALL USING (auth.uid() = user_id);
 
@@ -88,6 +95,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger to handle recurring todos
+DROP TRIGGER IF EXISTS trigger_update_next_due_date ON financial_todos;
 CREATE TRIGGER trigger_update_next_due_date
   BEFORE UPDATE ON financial_todos
   FOR EACH ROW EXECUTE FUNCTION update_next_due_date();
@@ -100,4 +108,4 @@ VALUES
   ('Save for emergency fund', 'Contribute to emergency fund savings', 'savings', 'high', TRUE, 'monthly', ARRAY['savings', 'emergency'], TRUE),
   ('Review investment portfolio', 'Review and rebalance investment portfolio', 'investment', 'medium', TRUE, 'quarterly', ARRAY['investment', 'review'], TRUE),
   ('File tax returns', 'Prepare and file annual tax returns', 'tax', 'high', TRUE, 'yearly', ARRAY['tax', 'filing'], TRUE)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (title, is_default) DO NOTHING;

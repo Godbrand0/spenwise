@@ -51,18 +51,22 @@ CREATE INDEX IF NOT EXISTS idx_tax_calculations_due_date ON tax_calculations(due
 ALTER TABLE tax_calculations ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own tax calculations
+DROP POLICY IF EXISTS "Users can view own tax calculations" ON tax_calculations;
 CREATE POLICY "Users can view own tax calculations" ON tax_calculations
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can insert their own tax calculations
+DROP POLICY IF EXISTS "Users can insert own tax calculations" ON tax_calculations;
 CREATE POLICY "Users can insert own tax calculations" ON tax_calculations
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own tax calculations
+DROP POLICY IF EXISTS "Users can update own tax calculations" ON tax_calculations;
 CREATE POLICY "Users can update own tax calculations" ON tax_calculations
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Users can delete their own tax calculations
+DROP POLICY IF EXISTS "Users can delete own tax calculations" ON tax_calculations;
 CREATE POLICY "Users can delete own tax calculations" ON tax_calculations
   FOR DELETE USING (auth.uid() = user_id);
 
@@ -87,6 +91,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger to update effective rate
+DROP TRIGGER IF EXISTS trigger_update_effective_rate ON tax_calculations;
 CREATE TRIGGER trigger_update_effective_rate
   BEFORE INSERT OR UPDATE ON tax_calculations
   FOR EACH ROW EXECUTE FUNCTION update_effective_rate();

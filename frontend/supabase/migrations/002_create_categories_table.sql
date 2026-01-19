@@ -10,8 +10,9 @@ CREATE TABLE IF NOT EXISTS categories (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  -- Ensure unique category names per user
-  UNIQUE(user_id, name)
+  -- Ensure unique category names per user and for default categories
+  UNIQUE(user_id, name),
+  UNIQUE(name, is_default)
 );
 
 -- Create indexes
@@ -23,10 +24,12 @@ CREATE INDEX IF NOT EXISTS idx_categories_is_default ON categories(is_default);
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own categories and default categories
+DROP POLICY IF EXISTS "Users can view own categories" ON categories;
 CREATE POLICY "Users can view own categories" ON categories
   FOR SELECT USING (auth.uid() = user_id OR is_default = TRUE);
 
 -- Users can manage their own categories
+DROP POLICY IF EXISTS "Users can manage own categories" ON categories;
 CREATE POLICY "Users can manage own categories" ON categories
   FOR ALL USING (auth.uid() = user_id);
 

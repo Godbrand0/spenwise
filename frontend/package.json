@@ -10,8 +10,8 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
-    "db:migrate": "echo 'Database migration would run here'",
-    "db:seed": "echo 'Database seeding would run here'"
+    "db:migrate": "supabase db push",
+    "db:seed": "supabase db reset"
   },
   "dependencies": {
     "@google/generative-ai": "0.24.1",

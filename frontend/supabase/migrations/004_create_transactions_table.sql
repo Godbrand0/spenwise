@@ -43,18 +43,22 @@ CREATE INDEX IF NOT EXISTS idx_transactions_description ON transactions USING gi
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own transactions
+DROP POLICY IF EXISTS "Users can view own transactions" ON transactions;
 CREATE POLICY "Users can view own transactions" ON transactions
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can insert their own transactions
+DROP POLICY IF EXISTS "Users can insert own transactions" ON transactions;
 CREATE POLICY "Users can insert own transactions" ON transactions
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own transactions
+DROP POLICY IF EXISTS "Users can update own transactions" ON transactions;
 CREATE POLICY "Users can update own transactions" ON transactions
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Users can delete their own transactions
+DROP POLICY IF EXISTS "Users can delete own transactions" ON transactions;
 CREATE POLICY "Users can delete own transactions" ON transactions
   FOR DELETE USING (auth.uid() = user_id);
 
@@ -106,14 +110,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create triggers to update statement totals
+DROP TRIGGER IF EXISTS trigger_update_statement_totals_insert ON transactions;
 CREATE TRIGGER trigger_update_statement_totals_insert
   AFTER INSERT ON transactions
   FOR EACH ROW EXECUTE FUNCTION update_statement_totals();
 
+DROP TRIGGER IF EXISTS trigger_update_statement_totals_update ON transactions;
 CREATE TRIGGER trigger_update_statement_totals_update
   AFTER UPDATE ON transactions
   FOR EACH ROW EXECUTE FUNCTION update_statement_totals();
 
+DROP TRIGGER IF EXISTS trigger_update_statement_totals_delete ON transactions;
 CREATE TRIGGER trigger_update_statement_totals_delete
   AFTER DELETE ON transactions
   FOR EACH ROW EXECUTE FUNCTION update_statement_totals();
