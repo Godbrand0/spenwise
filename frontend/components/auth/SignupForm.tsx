@@ -18,19 +18,31 @@ export const SignupForm: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName: email.split('@')[0], // Extract first name from email or you can add a separate input field
+        }),
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setView('verify');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Signup failed');
+      } else {
+        setView('verify');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Signup error:', err);
     }
+
     setLoading(false);
   };
 
@@ -39,17 +51,42 @@ export const SignupForm: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'signup',
-    });
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          otp,
+        }),
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      window.location.href = '/';
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Verification failed');
+      } else {
+        // Verification successful, now sign in the user
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          setError('Verification successful but sign-in failed. Please try logging in manually.');
+          console.error('Sign-in error:', signInError);
+        } else {
+          // Successfully signed in, redirect to home
+          window.location.href = '/';
+        }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Verification error:', err);
     }
+
     setLoading(false);
   };
 

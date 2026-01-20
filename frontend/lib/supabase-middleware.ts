@@ -62,8 +62,10 @@ export async function updateSession(request: NextRequest) {
   const isPublicPage = ['/docs', '/support', '/privacy'].some(path => 
     request.nextUrl.pathname.startsWith(path)
   )
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
 
-  if (!user && !isAuthPage && !isPublicPage) {
+  // Don't redirect API routes - they should return JSON, not HTML
+  if (!user && !isAuthPage && !isPublicPage && !isApiRoute) {
     // Redirect unauthenticated users to login page
     const url = request.nextUrl.clone()
     url.pathname = '/auth'
