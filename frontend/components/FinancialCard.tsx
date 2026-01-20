@@ -51,10 +51,6 @@ export const FinancialCard: React.FC<FinancialCardProps> = ({
           </div>
         )}
       </div>
-      
-      {/* HUD corner accents */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/30 rounded-tl-lg" />
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/30 rounded-br-lg" />
     </div>
   );
 };

@@ -18,20 +18,24 @@ export const metadata: Metadata = {
 };
 
 import { Sidebar } from "@/components/Sidebar";
+import { createServerClient } from "@/lib/database/client";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#05070a] text-slate-200`}
       >
         <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 ml-64 min-h-screen relative">
+          {user && <Sidebar />}
+          <main className={`flex-1 ${user ? 'ml-64' : ''} min-h-screen relative`}>
             {/* Background Glow */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
               <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />

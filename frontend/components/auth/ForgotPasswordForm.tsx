@@ -34,15 +34,18 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }
 
   if (success) {
     return (
-      <div className="text-center space-y-4">
-        <div className="text-[#00ff00] text-sm uppercase font-bold">Reset Link Sent</div>
-        <p className="text-gray-400 text-xs uppercase tracking-widest leading-relaxed">
-          A password reset link has been sent to <span className="text-white">{email}</span>. 
-          Please check your uplink.
+      <div className="text-center space-y-4 animate-fade-in">
+        <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center border border-blue-500/20 mx-auto mb-4">
+          <Mail className="text-blue-500 w-6 h-6" />
+        </div>
+        <h3 className="text-lg font-bold text-white">Reset Link Sent</h3>
+        <p className="text-slate-400 text-xs leading-relaxed">
+          A password reset link has been sent to <span className="text-white font-medium">{email}</span>. 
+          Please check your inbox.
         </p>
         <button
           onClick={onBack}
-          className="text-[#00ff00] text-xs uppercase hover:underline flex items-center justify-center gap-2 w-full mt-4"
+          className="text-blue-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 w-full mt-6"
         >
           <ArrowLeft className="w-3 h-3" />
           Back to Login
@@ -52,25 +55,25 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <form onSubmit={handleReset} className="space-y-4">
         <div>
-          <label className="block text-xs uppercase text-gray-400 mb-1 ml-1">Email Address</label>
+          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Email Address</label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00ff00]" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded p-2 pl-10 text-sm focus:border-[#00ff00] outline-none transition-colors"
-              placeholder="user@spenwise.com"
+              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
+              placeholder="name@example.com"
               required
             />
           </div>
         </div>
 
         {error && (
-          <div className="text-red-500 text-xs uppercase text-center border border-red-500/30 bg-red-500/10 p-2 rounded">
+          <div className="text-rose-500 text-[10px] font-bold uppercase tracking-wider text-center border border-rose-500/20 bg-rose-500/5 p-3 rounded-xl">
             {error}
           </div>
         )}
@@ -78,7 +81,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#00ff00] text-black font-bold py-2 rounded uppercase text-sm flex items-center justify-center gap-2 hover:bg-[#00cc00] transition-colors disabled:opacity-50"
+          className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none"
         >
           <KeyRound className="w-4 h-4" />
           {loading ? 'Processing...' : 'Request Reset'}
@@ -87,7 +90,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }
 
       <button
         onClick={onBack}
-        className="text-gray-500 text-xs uppercase hover:text-white transition-colors flex items-center justify-center gap-2 w-full"
+        className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 w-full"
       >
         <ArrowLeft className="w-3 h-3" />
         Back to Login

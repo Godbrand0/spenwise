@@ -56,33 +56,6 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* HUD Style Elements */
-.hud-border {
-  position: relative;
-}
-
-.hud-border::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 10px;
-  height: 10px;
-  border-top: 2px solid var(--primary);
-  border-left: 2px solid var(--primary);
-}
-
-.hud-border::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  border-bottom: 2px solid var(--primary);
-  border-right: 2px solid var(--primary);
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

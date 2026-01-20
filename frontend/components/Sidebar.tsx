@@ -42,7 +42,7 @@ export const Sidebar = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-white font-bold tracking-tight text-lg">SPENWISE</span>
-            <span className="text-blue-500 text-[10px] font-black tracking-[0.2em] uppercase">Pro Edition</span>
+            <span className="text-blue-500 text-[10px] font-black tracking-[0.2em] uppercase">Personal Finance</span>
           </div>
         </Link>
       </div>

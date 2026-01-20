@@ -30,7 +30,7 @@ export default function TaxPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#05070a]">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-[0.3em]">Accessing Tax Vault...</p>
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-[0.3em]">Accessing Tax Center...</p>
         </div>
       </div>
     );
@@ -45,7 +45,7 @@ export default function TaxPage() {
             <ShieldCheck className="text-emerald-500 w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Tax Vault</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Tax Center</h1>
             <p className="text-slate-400 text-sm">Compliance tracking & automated tax estimations.</p>
           </div>
         </div>

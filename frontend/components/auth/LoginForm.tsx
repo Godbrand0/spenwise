@@ -24,7 +24,7 @@ export const LoginForm: React.FC = () => {
     if (error) {
       setError(error.message);
     } else {
-      window.location.href = '/upload';
+      window.location.href = '/';
     }
     setLoading(false);
   };
@@ -43,32 +43,32 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label className="block text-xs uppercase text-gray-400 mb-1 ml-1">Email Address</label>
+          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Email Address</label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00ff00]" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded p-2 pl-10 text-sm focus:border-[#00ff00] outline-none transition-colors"
-              placeholder="user@spenwise.com"
+              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
+              placeholder="name@example.com"
               required
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs uppercase text-gray-400 mb-1 ml-1">Password</label>
+          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Password</label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00ff00]" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded p-2 pl-10 text-sm focus:border-[#00ff00] outline-none transition-colors"
+              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
               placeholder="••••••••"
               required
             />
@@ -76,7 +76,7 @@ export const LoginForm: React.FC = () => {
         </div>
 
         {error && (
-          <div className="text-red-500 text-xs uppercase text-center border border-red-500/30 bg-red-500/10 p-2 rounded">
+          <div className="text-rose-500 text-[10px] font-bold uppercase tracking-wider text-center border border-rose-500/20 bg-rose-500/5 p-3 rounded-xl">
             {error}
           </div>
         )}
@@ -84,22 +84,22 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#00ff00] text-black font-bold py-2 rounded uppercase text-sm flex items-center justify-center gap-2 hover:bg-[#00cc00] transition-colors disabled:opacity-50"
+          className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none"
         >
           <LogIn className="w-4 h-4" />
-          {loading ? 'Processing...' : 'Initialize Session'}
+          {loading ? 'Processing...' : 'Sign In'}
         </button>
       </form>
 
       <div className="relative flex items-center py-2">
-        <div className="flex-grow border-t border-[#333]"></div>
-        <span className="flex-shrink mx-4 text-xs text-gray-500 uppercase">OR</span>
-        <div className="flex-grow border-t border-[#333]"></div>
+        <div className="flex-grow border-t border-white/5"></div>
+        <span className="flex-shrink mx-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">OR</span>
+        <div className="flex-grow border-t border-white/5"></div>
       </div>
 
       <button
         onClick={handleGoogleLogin}
-        className="w-full bg-white text-black font-bold py-2 rounded uppercase text-sm flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+        className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all shadow-lg shadow-white/5"
       >
         <Chrome className="w-4 h-4" />
         Continue with Google

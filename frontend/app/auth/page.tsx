@@ -34,12 +34,12 @@ function AuthContent() {
                 Forgot Access Key?
               </button>
               <div className="text-xs text-gray-500 uppercase">
-                New Operative?{' '}
+                New to Spenwise?{' '}
                 <button
                   onClick={() => setView('signup')}
-                  className="text-[#00ff00] hover:underline"
+                  className="text-blue-500 hover:underline"
                 >
-                  Register Here
+                  Create Account
                 </button>
               </div>
             </div>
@@ -51,12 +51,12 @@ function AuthContent() {
             <SignupForm />
             <div className="text-center">
               <div className="text-xs text-gray-500 uppercase">
-                Already Registered?{' '}
+                Already have an account?{' '}
                 <button
                   onClick={() => setView('login')}
-                  className="text-[#00ff00] hover:underline"
+                  className="text-blue-500 hover:underline"
                 >
-                  Initialize Session
+                  Sign In
                 </button>
               </div>
             </div>
@@ -70,22 +70,22 @@ function AuthContent() {
   const getTitle = () => {
     switch (view) {
       case 'login':
-        return 'Mission Control Login';
+        return 'Welcome Back';
       case 'signup':
-        return 'Operative Registration';
+        return 'Create Account';
       case 'forgot-password':
-        return 'Access Recovery';
+        return 'Reset Password';
     }
   };
 
   const getSubtitle = () => {
     switch (view) {
       case 'login':
-        return 'Secure Uplink Established';
+        return 'Sign in to manage your finances';
       case 'signup':
-        return 'Join the Spenwise Network';
+        return 'Join Spenwise for intelligent financial management';
       case 'forgot-password':
-        return 'Emergency Protocol Initiated';
+        return 'We will send you a recovery link';
     }
   };
 
@@ -99,9 +99,9 @@ function AuthContent() {
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-[#00ff00] font-mono animate-pulse uppercase tracking-widest">
-          Establishing Secure Uplink...
+      <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
+        <div className="text-blue-500 font-mono animate-pulse uppercase tracking-widest">
+          Loading...
         </div>
       </div>
     }>
