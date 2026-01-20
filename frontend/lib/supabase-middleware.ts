@@ -54,7 +54,29 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
+  const isPublicPage = ['/docs', '/support', '/privacy'].some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  if (!user && !isAuthPage && !isPublicPage) {
+    // Redirect unauthenticated users to login page
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth'
+    url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAuthPage) {
+    // Redirect authenticated users away from auth page
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
 
   return response
 }

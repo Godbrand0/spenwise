@@ -15,14 +15,12 @@ import {
   TaxCalculationInput,
 } from "@/lib/database/types";
 
-// Server-side Supabase client
-const supabase = createServerClient();
-
 // User functions
 export async function getUserById(
   userId: string,
 ): Promise<DatabaseResponse<User>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -39,6 +37,7 @@ export async function createUser(
   user: Omit<User, "id" | "created_at" | "updated_at">,
 ): Promise<DatabaseResponse<User>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("users")
       .insert(user)
@@ -56,6 +55,7 @@ export async function getCategories(
   userId?: string,
 ): Promise<DatabaseResponse<Category[]>> {
   try {
+    const supabase = await createServerClient();
     let query = supabase
       .from("categories")
       .select("*")
@@ -80,6 +80,7 @@ export async function createCategory(
   category: Omit<Category, "id" | "created_at" | "updated_at">,
 ): Promise<DatabaseResponse<Category>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("categories")
       .insert(category)
@@ -100,6 +101,7 @@ export async function createStatement(
   >,
 ): Promise<DatabaseResponse<Statement>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("statements")
       .insert(statement)
@@ -117,6 +119,7 @@ export async function updateStatement(
   updates: Partial<Statement>,
 ): Promise<DatabaseResponse<Statement>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("statements")
       .update(updates)
@@ -135,6 +138,7 @@ export async function getStatementsByUserId(
   params?: PaginationParams,
 ): Promise<DatabaseResponse<PaginatedResponse<Statement>>> {
   try {
+    const supabase = await createServerClient();
     let query = supabase
       .from("statements")
       .select("*", { count: "exact" })
@@ -181,6 +185,7 @@ export async function createTransactions(
   transactions: Omit<Transaction, "id" | "created_at" | "updated_at">[],
 ): Promise<DatabaseResponse<Transaction[]>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("transactions")
       .insert(transactions)
@@ -198,6 +203,7 @@ export async function getTransactionsByUserId(
   params?: PaginationParams,
 ): Promise<DatabaseResponse<PaginatedResponse<Transaction>>> {
   try {
+    const supabase = await createServerClient();
     let query = supabase
       .from("transactions")
       .select("*", { count: "exact" })
@@ -269,6 +275,7 @@ export async function updateTransaction(
   updates: Partial<Transaction>,
 ): Promise<DatabaseResponse<Transaction>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("transactions")
       .update(updates)
@@ -290,6 +297,7 @@ export async function createTaxCalculation(
   >,
 ): Promise<DatabaseResponse<TaxCalculation>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("tax_calculations")
       .insert(taxCalculation)
@@ -306,6 +314,7 @@ export async function getTaxCalculationsByUserId(
   userId: string,
 ): Promise<DatabaseResponse<TaxCalculation[]>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("tax_calculations")
       .select("*")
@@ -327,6 +336,7 @@ export async function createFinancialTodo(
   >,
 ): Promise<DatabaseResponse<FinancialTodo>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("financial_todos")
       .insert(todo)
@@ -343,6 +353,7 @@ export async function getFinancialTodosByUserId(
   userId: string,
 ): Promise<DatabaseResponse<FinancialTodo[]>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("financial_todos")
       .select("*")
@@ -362,6 +373,7 @@ export async function updateFinancialTodo(
   updates: Partial<FinancialTodo>,
 ): Promise<DatabaseResponse<FinancialTodo>> {
   try {
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from("financial_todos")
       .update(updates)
@@ -379,6 +391,7 @@ export async function deleteFinancialTodo(
   id: string,
 ): Promise<DatabaseResponse<null>> {
   try {
+    const supabase = await createServerClient();
     const { error } = await supabase
       .from("financial_todos")
       .delete()
@@ -397,6 +410,7 @@ export async function getSpendingAnalytics(
   dateTo?: string,
 ): Promise<DatabaseResponse<any>> {
   try {
+    const supabase = await createServerClient();
     let query = supabase.from("transactions").select("*").eq("user_id", userId);
 
     if (dateFrom) {

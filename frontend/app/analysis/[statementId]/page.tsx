@@ -1,365 +1,212 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { formatNaira } from '../../../lib/tax/calculator';
+import React, { useEffect, useState } from 'react';
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer, 
+  Tooltip, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid 
+} from 'recharts';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  Target, 
+  ArrowLeft,
+  Download,
+  Share2,
+  Printer
+} from 'lucide-react';
+import Link from 'next/link';
+import { FinancialCard } from '@/components/FinancialCard';
+import { TransactionTable } from '@/components/TransactionTable';
 
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'debit' | 'credit';
-  category?: string;
-  is_income: boolean;
-}
-
-interface CategoryData {
-  category: string;
-  amount: number;
-  count: number;
-  [key: string]: string | number | undefined;
-}
-
-interface TrendData {
-  month: string;
-  amount: number;
-  category: string;
-  [key: string]: string | number | undefined;
-}
-
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+const COLORS = ['#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4'];
 
 export default function AnalysisPage({ params }: { params: { statementId: string } }) {
-  const [data, setData] = useState<{
-    transactions: Transaction[];
-    categoryData: CategoryData[];
-    totalSpending: number;
-    totalIncome: number;
-    topCategory: string;
-    savingsPotential: number;
-  } | null>(null);
-  const [trends, setTrends] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
-    // Mock data for now - in real app, fetch from API
-    const mockTransactions: Transaction[] = [
-      { id: '1', date: '2026-01-15', description: 'Shoprite Shopping', amount: 25000, type: 'debit', category: 'Groceries', is_income: false },
-      { id: '2', date: '2026-01-16', description: 'Uber Ride', amount: 3500, type: 'debit', category: 'Transport', is_income: false },
-      { id: '3', date: '2026-01-17', description: 'KFC Dinner', amount: 8500, type: 'debit', category: 'Dining', is_income: false },
-      { id: '4', date: '2026-01-18', description: 'Salary Payment', amount: 500000, type: 'credit', category: 'Salary', is_income: true },
-      { id: '5', date: '2026-01-19', description: 'Netflix Subscription', amount: 2900, type: 'debit', category: 'Entertainment', is_income: false },
-      { id: '6', date: '2026-01-20', description: 'Electricity Bill', amount: 15000, type: 'debit', category: 'Utilities', is_income: false },
-      { id: '7', date: '2026-01-21', description: 'Freelance Payment', amount: 75000, type: 'credit', category: 'Freelance Income', is_income: true },
-      { id: '8', date: '2026-01-22', description: 'Spar Groceries', amount: 18000, type: 'debit', category: 'Groceries', is_income: false },
-    ];
-    
-    // Process data
-    const expenses = mockTransactions.filter(t => t.type === 'debit');
-    const income = mockTransactions.filter(t => t.type === 'credit');
-    
-    // Group by category
-    const categoryMap = new Map<string, { amount: number; count: number }>();
-    expenses.forEach(t => {
-      const cat = t.category || 'Uncategorized';
-      const current = categoryMap.get(cat) || { amount: 0, count: 0 };
-      categoryMap.set(cat, {
-        amount: current.amount + t.amount,
-        count: current.count + 1
-      });
-    });
-    
-    const categoryData = Array.from(categoryMap.entries()).map(([category, data]) => ({
-      category,
-      amount: data.amount,
-      count: data.count
-    })).sort((a, b) => b.amount - a.amount);
-    
-    const totalSpending = expenses.reduce((sum, t) => sum + t.amount, 0);
-    const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
-    const savingsPotential = totalIncome - totalSpending;
-    
-    // Mock trend data
-    const mockTrends: TrendData[] = [
-      { month: 'Oct 2025', amount: 45000, category: 'Groceries' },
-      { month: 'Nov 2025', amount: 52000, category: 'Groceries' },
-      { month: 'Dec 2025', amount: 48000, category: 'Groceries' },
-      { month: 'Jan 2026', amount: 43000, category: 'Groceries' },
-    ];
-    
-    setTimeout(() => {
-      setData({
-        transactions: mockTransactions,
-        categoryData,
-        totalSpending,
-        totalIncome,
-        topCategory: categoryData[0]?.category || 'None',
-        savingsPotential
-      });
-      setTrends(mockTrends);
-      setLoading(false);
-    }, 1000);
-  }, [params.statementId]);
-  
+    setIsMounted(true);
+    setTimeout(() => setLoading(false), 1000);
+  }, []);
+
+  if (!isMounted) return null;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Analyzing your transactions...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#05070a]">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
+          <p className="text-slate-400 font-mono text-xs uppercase tracking-[0.3em] animate-pulse">Generating Report...</p>
         </div>
       </div>
     );
   }
-  
-  if (!data) return <div>Error loading data</div>;
-  
+
+  const mockTransactions = [
+    { id: '1', date: '2026-01-15', description: 'Shoprite Shopping', amount: 25000, type: 'debit' as const, category: 'Groceries' },
+    { id: '2', date: '2026-01-16', description: 'Uber Ride', amount: 3500, type: 'debit' as const, category: 'Transport' },
+    { id: '3', date: '2026-01-17', description: 'KFC Dinner', amount: 8500, type: 'debit' as const, category: 'Dining' },
+    { id: '4', date: '2026-01-18', description: 'Salary Payment', amount: 500000, type: 'credit' as const, category: 'Salary' },
+    { id: '5', date: '2026-01-19', description: 'Netflix Subscription', amount: 2900, type: 'debit' as const, category: 'Entertainment' },
+  ];
+
+  const categoryData = [
+    { name: 'Groceries', value: 45000 },
+    { name: 'Transport', value: 12000 },
+    { name: 'Dining', value: 28000 },
+    { name: 'Utilities', value: 35000 },
+    { name: 'Rent', value: 150000 },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Your Spending Overview
-          </h1>
-          <p className="text-gray-600">
-            Detailed analysis of your financial transactions and spending patterns
-          </p>
-        </div>
-        
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card 
-            title="Total Spending" 
-            value={formatNaira(data.totalSpending)} 
-            icon={<TrendingUp className="h-6 w-6" />}
-            trend="down"
-            trendValue="12%"
-          />
-          <Card 
-            title="Total Income" 
-            value={formatNaira(data.totalIncome)} 
-            icon={<DollarSign className="h-6 w-6" />}
-            trend="up"
-            trendValue="8%"
-          />
-          <Card 
-            title="Savings Potential" 
-            value={formatNaira(data.savingsPotential)} 
-            icon={<Target className="h-6 w-6" />}
-            trend="up"
-            trendValue="15%"
-          />
-          <Card 
-            title="Top Category" 
-            value={data.topCategory} 
-            icon={<ArrowUpRight className="h-6 w-6" />}
-            trend="neutral"
-          />
-        </div>
-        
-        {/* Historical Trends */}
-        {trends.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h2 className="text-xl font-semibold mb-4">Spending Trends</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={trends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatNaira(Number(value))} />
-                <Bar dataKey="amount" fill="#3B82F6" />
-              </BarChart>
-            </ResponsiveContainer>
+    <div className="p-8 space-y-8 animate-fade-in">
+      {/* Navigation & Actions */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Statement Analysis</h1>
+            <p className="text-slate-400 text-xs font-mono uppercase tracking-wider">ID: {params.statementId.slice(0, 8)}... • GTBank Statement • May 2026</p>
           </div>
-        )}
-        
-        {/* Category Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Category Breakdown</h2>
-            <ResponsiveContainer width="100%" height={300}>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-slate-400 hover:text-white">
+            <Share2 size={18} />
+          </button>
+          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-slate-400 hover:text-white">
+            <Printer size={18} />
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all">
+            <Download size={16} />
+            <span>Export PDF</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Summary Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <FinancialCard 
+          title="Total Outflow" 
+          value="₦270,400.00" 
+          icon={TrendingDown}
+          trend={{ value: '14%', isPositive: false }}
+        />
+        <FinancialCard 
+          title="Total Inflow" 
+          value="₦500,000.00" 
+          icon={TrendingUp}
+          trend={{ value: '5%', isPositive: true }}
+        />
+        <FinancialCard 
+          title="Net Savings" 
+          value="₦229,600.00" 
+          icon={Target}
+          trend={{ value: '45.9%', isPositive: true }}
+        />
+      </div>
+
+      {/* Detailed Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass p-8 rounded-3xl border border-white/5">
+          <h3 className="text-lg font-bold text-white mb-8 flex items-center gap-2">
+            <div className="w-1 h-4 bg-blue-500 rounded-full" />
+            Spending Distribution
+          </h3>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data.categoryData}
-                  dataKey="amount"
-                  nameKey="category"
+                  data={categoryData}
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  label={(props: any) => {
-                    const { category, percent } = props.payload || {};
-                    return `${category} ${((percent || 0) * 100).toFixed(0)}%`;
-                  }}
+                  innerRadius={80}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
                 >
-                  {data.categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(255,255,255,0.05)" strokeWidth={2} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => formatNaira(Number(value))} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Category Details</h2>
-            <div className="space-y-3">
-              {data.categoryData.map((cat, index) => (
-                <CategoryRow key={cat.category} data={cat} color={COLORS[index % COLORS.length]} />
-              ))}
+          <div className="grid grid-cols-2 gap-4 mt-8">
+            {categoryData.map((item, index) => (
+              <div key={item.name} className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.name}</span>
+                  <span className="text-sm font-bold text-white">₦{item.value.toLocaleString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass p-8 rounded-3xl border border-white/5">
+          <h3 className="text-lg font-bold text-white mb-8 flex items-center gap-2">
+            <div className="w-1 h-4 bg-indigo-500 rounded-full" />
+            Daily Transaction Volume
+          </h3>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={categoryData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                />
+                <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-8 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Target className="text-blue-500 w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white mb-1">AI Insight</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Your housing expenses account for 55% of your total outflow. Consider optimizing your utility usage to increase your net savings potential by 5.2%.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* Recent Transactions */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.transactions.slice(0, 10).map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(transaction.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {transaction.description}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {transaction.category || 'Uncategorized'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        transaction.type === 'credit' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {transaction.type}
-                      </span>
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'credit' ? '+' : '-'}{formatNaira(transaction.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => {
-              // In real app, navigate to insights page
-              console.log('View AI insights');
-            }}
-            className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
-          >
-            View AI Insights
-          </button>
-          <button
-            onClick={() => {
-              // In real app, navigate to todos page
-              console.log('Set financial goals');
-            }}
-            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-200 transition-colors"
-          >
-            Set Financial Goals
-          </button>
-          <button
-            onClick={() => {
-              // In real app, navigate to tax page
-              console.log('View tax estimates');
-            }}
-            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-200 transition-colors"
-          >
-            View Tax Estimates
-          </button>
-        </div>
       </div>
-    </div>
-  );
-}
 
-function Card({ 
-  title, 
-  value, 
-  icon, 
-  trend, 
-  trendValue 
-}: { 
-  title: string; 
-  value: string; 
-  icon: React.ReactNode; 
-  trend: 'up' | 'down' | 'neutral';
-  trendValue?: string;
-}) {
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-        <div className="p-3 bg-blue-100 rounded-lg">
-          {icon}
-        </div>
-      </div>
-      {trend !== 'neutral' && trendValue && (
-        <div className="mt-4 flex items-center text-sm">
-          {trend === 'up' ? (
-            <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-          ) : (
-            <ArrowDownRight className="h-4 w-4 text-red-500 mr-1" />
-          )}
-          <span className={trend === 'up' ? 'text-green-600' : 'text-red-600'}>
-            {trendValue} from last month
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CategoryRow({ data, color }: { data: CategoryData; color: string }) {
-  return (
-    <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
-      <div className="flex items-center">
-        <div 
-          className="w-4 h-4 rounded-full mr-3" 
-          style={{ backgroundColor: color }}
-        />
-        <span className="font-medium text-gray-900">{data.category}</span>
-      </div>
-      <div className="text-right">
-        <p className="font-semibold text-gray-900">{formatNaira(data.amount)}</p>
-        <p className="text-xs text-gray-500">{data.count} transactions</p>
+      {/* Transaction Log */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-white tracking-tight">Extracted Transactions</h3>
+        <TransactionTable transactions={mockTransactions} />
       </div>
     </div>
   );

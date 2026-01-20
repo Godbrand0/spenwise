@@ -1,14 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createServerClient as createSSRServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 // Create a Supabase client for server-side usage
-export function createServerClient() {
-  return createClient(
+export async function createServerClient() {
+  const cookieStore = await cookies();
+
+  return createSSRServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
       },
     },
   );
@@ -16,7 +21,7 @@ export function createServerClient() {
 
 // Create a Supabase client for client-side usage
 export function createBrowserClient() {
-  return createClient(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
