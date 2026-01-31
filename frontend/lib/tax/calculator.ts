@@ -29,16 +29,16 @@ export interface TaxCalculationResult {
 }
 
 // Default Nigerian tax configuration for 2026
+// Updated to include ₦800,000 tax exemption and maximum 25% rate
 export const defaultTaxConfig: TaxConfig = {
   taxBrackets: [
-    { min: 0, max: 300000, rate: 0.07 },
-    { min: 300001, max: 600000, rate: 0.11 },
-    { min: 600001, max: 1100000, rate: 0.15 },
-    { min: 1100001, max: 1600000, rate: 0.19 },
-    { min: 1600001, max: 3200000, rate: 0.21 },
-    { min: 3200001, max: null, rate: 0.24 },
+    { min: 800001, max: 1500000, rate: 0.15 },
+    { min: 1500001, max: 2500000, rate: 0.19 },
+    { min: 2500001, max: 3500000, rate: 0.21 },
+    { min: 3500001, max: 5000000, rate: 0.23 },
+    { min: 5000001, max: null, rate: 0.25 },
   ],
-  personalAllowance: 0,
+  personalAllowance: 800000, // First ₦800,000 is tax-exempt
   reliefAllowancePercent: 20,
 };
 
@@ -65,15 +65,20 @@ export async function calculateTax(
   }
 
   // Calculate consolidated relief allowance (20% of gross income, capped at ₦200,000)
+  // This is only applied to income above the ₦800,000 exemption
+  const incomeAboveExemption = Math.max(
+    0,
+    grossIncome - taxConfig.personalAllowance,
+  );
   const consolidatedReliefAllowance = Math.min(
-    (grossIncome * taxConfig.reliefAllowancePercent) / 100,
+    (incomeAboveExemption * taxConfig.reliefAllowancePercent) / 100,
     200000,
   );
 
-  // Calculate taxable income
+  // Calculate taxable income (income above exemption minus relief allowance)
   const taxableIncome = Math.max(
     0,
-    grossIncome - consolidatedReliefAllowance - taxConfig.personalAllowance,
+    grossIncome - taxConfig.personalAllowance - consolidatedReliefAllowance,
   );
 
   // Calculate tax using progressive brackets
@@ -81,6 +86,33 @@ export async function calculateTax(
     taxableIncome,
     taxConfig.taxBrackets,
   );
+
+  // Add exemption and relief to breakdown for transparency
+  const fullBreakdown = [];
+
+  // Add personal allowance (exemption) if applicable
+  if (
+    taxConfig.personalAllowance > 0 &&
+    grossIncome > taxConfig.personalAllowance
+  ) {
+    fullBreakdown.push({
+      bracket: `Personal Allowance (Exempt)`,
+      amount: Math.min(grossIncome, taxConfig.personalAllowance),
+      tax: 0,
+    });
+  }
+
+  // Add consolidated relief allowance if applicable
+  if (consolidatedReliefAllowance > 0) {
+    fullBreakdown.push({
+      bracket: `Consolidated Relief Allowance (20% of income above exemption, capped at ₦200,000)`,
+      amount: consolidatedReliefAllowance,
+      tax: 0,
+    });
+  }
+
+  // Add tax brackets
+  fullBreakdown.push(...breakdown);
 
   // Determine tax badge based on effective rate
   const effectiveRate = grossIncome > 0 ? (totalTax / grossIncome) * 100 : 0;
@@ -101,7 +133,7 @@ export async function calculateTax(
     personalAllowance: taxConfig.personalAllowance,
     estimatedTax: totalTax,
     effectiveRate,
-    taxCalculationDetails: breakdown,
+    taxCalculationDetails: fullBreakdown,
     isTaxable: true,
     taxBadge,
   };
@@ -160,7 +192,7 @@ function calculateProgressiveTax(
     breakdown.push({
       bracket: `₦${bracket.min.toLocaleString()} - ${
         bracket.max ? "₦" + bracket.max.toLocaleString() : "above"
-      }`,
+      } @ ${(bracket.rate * 100).toFixed(0)}%`,
       amount: taxableInBracket,
       tax: taxForBracket,
     });
