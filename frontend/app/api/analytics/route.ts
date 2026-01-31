@@ -1,40 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/database/client";
-import { getSpendingAnalytics } from "@/lib/database/utils";
+import { callGemini } from "@/lib/ai/gemini-client";
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
-    const dateFrom = searchParams.get("dateFrom") || undefined;
-    const dateTo = searchParams.get("dateTo") || undefined;
+    const { prompt, type } = await req.json();
 
-    if (!userId) {
+    if (!prompt) {
       return NextResponse.json(
-        { error: "User ID is required" },
+        { error: "Prompt is required" },
         { status: 400 },
       );
     }
 
-    const { data: analytics, error } = await getSpendingAnalytics(
-      userId,
-      dateFrom,
-      dateTo,
-    );
+    let systemInstruction = "";
+    let responseFormat = {};
 
-    if (error) {
-      console.error("Error fetching analytics:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch analytics" },
-        { status: 500 },
-      );
+    if (type === "analysis") {
+      systemInstruction = `You are a financial analyst AI assistant. Analyze the provided transaction data and provide insights.
+      
+      Format your response as JSON with the following structure:
+      {
+        "insights": "A brief summary of spending patterns (2-3 sentences)",
+        "suggestions": ["3-4 specific cost-cutting suggestions that can be turned into actionable goals"]
+      }
+      
+      Focus on practical, actionable advice that can help users save money and improve their financial health.`;
+
+      responseFormat = {
+        insights: "string",
+        suggestions: ["string"],
+      };
     }
 
-    return NextResponse.json(analytics);
+    const response = await callGemini(prompt, systemInstruction);
+
+    // Try to parse as JSON, if fails return as plain text
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(response || "{}");
+    } catch (e) {
+      // If not JSON, create a structured response
+      parsedResponse = {
+        insights: response || "Unable to generate insights",
+        suggestions: [],
+      };
+    }
+
+    return NextResponse.json(parsedResponse);
   } catch (error) {
     console.error("Error in analytics API:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to generate analytics" },
       { status: 500 },
     );
   }

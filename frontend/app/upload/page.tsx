@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { createBrowserClient } from "@/lib/database/client";
+import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/lib/store/hooks";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -11,6 +14,16 @@ export default function UploadPage() {
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [extractedData, setExtractedData] = useState<any>(null);
+  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const [isMounted, setIsMounted] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const router = useRouter();
+
+  const supabase = createBrowserClient();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -34,6 +47,12 @@ export default function UploadPage() {
   const handleUpload = async () => {
     if (!file) return;
 
+    if (!user) {
+      setUploadStatus("error");
+      setErrorMessage("You must be logged in to upload files");
+      return;
+    }
+
     setUploading(true);
     setUploadStatus("idle");
     setErrorMessage("");
@@ -41,6 +60,7 @@ export default function UploadPage() {
     try {
       const formData = new FormData();
       formData.append("statement", file);
+      formData.append("userId", user.id);
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -61,6 +81,43 @@ export default function UploadPage() {
       setErrorMessage("An unexpected error occurred");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!extractedData || !user) return;
+
+    setAnalyzing(true);
+    try {
+      const response = await fetch("/api/transactions/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pdfText: extractedData.text,
+          statementId: extractedData.statementId,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to analyze transactions");
+      }
+
+      console.log("Redirecting to analysis page with statementId:", extractedData.statementId);
+      router.push(`/analysis/${extractedData.statementId}`);
+    } catch (error) {
+      console.error("Analysis error:", error);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to analyze transactions",
+      );
+      setUploadStatus("error");
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -86,6 +143,31 @@ export default function UploadPage() {
       }
     }
   };
+
+  if (!isMounted || isLoading) return null;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Authentication Required
+            </h1>
+            <p className="text-lg text-gray-600 mb-8">
+              You must be logged in to upload bank statements.
+            </p>
+            <a
+              href="/auth"
+              className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+            >
+              Sign In
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -210,13 +292,11 @@ export default function UploadPage() {
               </div>
               <div className="mt-4 text-center">
                 <button
-                  onClick={() => {
-                    // In a real app, this would navigate to analysis page
-                    console.log("Navigate to analysis with extracted data");
-                  }}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+                  onClick={handleAnalyze}
+                  disabled={analyzing}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-400"
                 >
-                  Analyze Transactions
+                  {analyzing ? "Analyzing..." : "Analyze Transactions"}
                 </button>
               </div>
             </div>

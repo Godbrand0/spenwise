@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
-import { createServerClient } from "@/lib/database/client";
-import { createStatement } from "@/lib/database/utils";
+import { createServerClient } from "@/lib/database/server";
+import { createStatement, getUserById, createUser } from "@/lib/database/utils";
 
 // Set worker source
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.legacy.min.js`;
+// pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.legacy.min.js`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +26,43 @@ export async function POST(req: NextRequest) {
         { error: "User ID is required" },
         { status: 400 },
       );
+    }
+
+    // Check if user exists in our database, create if not
+    const { data: existingUser, error: userCheckError } =
+      await getUserById(userId);
+    if (userCheckError) {
+      console.error("Error checking user:", userCheckError);
+      return NextResponse.json(
+        { error: "Failed to verify user" },
+        { status: 500 },
+      );
+    }
+
+    if (!existingUser) {
+      // Get user details from Supabase auth
+      const supabase = await createServerClient();
+      const { data: authUser } = await supabase.auth.getUser();
+
+      if (!authUser.user || authUser.user.id !== userId) {
+        return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+      }
+
+      // Create user in our database
+      const { data: newUser, error: createUserError } = await createUser({
+        id: userId,
+        email: authUser.user.email || "",
+        full_name: authUser.user.user_metadata?.full_name || null,
+        avatar_url: authUser.user.user_metadata?.avatar_url || null,
+      });
+
+      if (createUserError) {
+        console.error("Error creating user:", createUserError);
+        return NextResponse.json(
+          { error: "Failed to create user profile" },
+          { status: 500 },
+        );
+      }
     }
 
     if (file.size > 10 * 1024 * 1024) {
@@ -54,8 +91,8 @@ export async function POST(req: NextRequest) {
 
       // Extract text items
       const pageText = textContent.items
-        .filter((item): item is TextItem => "str" in item)
-        .map((item) => item.str)
+        .filter((item: any): item is TextItem => "str" in item)
+        .map((item: any) => item.str)
         .join(" ");
 
       fullText += pageText + "\n";
@@ -93,7 +130,12 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error processing PDF:", error);
     return NextResponse.json(
-      { error: "Failed to process PDF file" },
+      {
+        error: "Failed to process PDF file",
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : undefined,
+      },
       { status: 500 },
     );
   }

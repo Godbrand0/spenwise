@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/database/client";
+import { createServerClient } from "@/lib/database/server";
 import { getUserById, createUser } from "@/lib/database/utils";
 
 export async function GET(req: NextRequest) {
@@ -42,11 +42,22 @@ export async function POST(req: NextRequest) {
   try {
     const { email, fullName, avatarUrl } = await req.json();
 
+    const supabase = await createServerClient();
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !authUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     const userData = {
+      id: authUser.id,
       email,
       full_name: fullName || null,
       avatar_url: avatarUrl || null,

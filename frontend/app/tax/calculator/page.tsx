@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { calculateTax, formatNaira } from "@/lib/tax/calculator";
 import TaxBadge from "@/components/tax/TaxBadge";
+import { createBrowserClient } from "@/lib/database/client";
 
 export default function TaxCalculatorPage() {
+  const [user, setUser] = useState<any>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const [incomeBreakdown, setIncomeBreakdown] = useState({
     salary: 0,
     freelance: 0,
@@ -16,14 +19,32 @@ export default function TaxCalculatorPage() {
   const [taxResult, setTaxResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  const supabase = createBrowserClient();
+
+  useEffect(() => {
+    setIsMounted(true);
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
+
   const handleCalculate = async () => {
+    if (!user) {
+      alert("You must be logged in to calculate tax");
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch("/api/tax/estimate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "demo-user", // In real app, get from auth
+          userId: user.id,
           periodStart: "2024-01-01",
           periodEnd: "2024-12-31",
           periodType: "yearly",
@@ -44,6 +65,29 @@ export default function TaxCalculatorPage() {
     (sum, amount) => sum + amount,
     0,
   );
+
+  if (!isMounted) return null;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Authentication Required
+          </h1>
+          <p className="text-lg text-gray-600 mb-8">
+            You must be logged in to use the tax calculator.
+          </p>
+          <a
+            href="/auth"
+            className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">

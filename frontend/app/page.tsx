@@ -1,63 +1,148 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  ShieldCheck, 
-  ArrowUpRight, 
+import React, { useState, useEffect } from "react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  ShieldCheck,
+  ArrowUpRight,
   Plus,
   Filter,
-  Download
-} from 'lucide-react';
-import { FinancialCard } from '@/components/FinancialCard';
-import { TransactionTable } from '@/components/TransactionTable';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+} from "lucide-react";
+import { FinancialCard } from "@/components/FinancialCard";
+import { TransactionTable } from "@/components/TransactionTable";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar
-} from 'recharts';
-
-const mockChartData = [
-  { name: 'Jan', income: 450000, expense: 320000 },
-  { name: 'Feb', income: 520000, expense: 380000 },
-  { name: 'Mar', income: 480000, expense: 410000 },
-  { name: 'Apr', income: 610000, expense: 390000 },
-  { name: 'May', income: 550000, expense: 420000 },
-  { name: 'Jun', income: 670000, expense: 450000 },
-];
-
-const mockTransactions = [
-  { id: '1', date: '2026-01-15', description: 'Shoprite Shopping', amount: 25000, type: 'debit' as const, category: 'Groceries' },
-  { id: '2', date: '2026-01-16', description: 'Uber Ride', amount: 3500, type: 'debit' as const, category: 'Transport' },
-  { id: '3', date: '2026-01-17', description: 'KFC Dinner', amount: 8500, type: 'debit' as const, category: 'Dining' },
-  { id: '4', date: '2026-01-18', description: 'Salary Payment', amount: 500000, type: 'credit' as const, category: 'Salary' },
-  { id: '5', date: '2026-01-19', description: 'Netflix Subscription', amount: 2900, type: 'debit' as const, category: 'Entertainment' },
-];
+} from "recharts";
+import { createBrowserClient } from "@/lib/database/client";
+import { useAppSelector } from "@/lib/store/hooks";
 
 export default function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
+  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState({
+    totalBalance: 0,
+    monthlyIncome: 0,
+    monthlyExpense: 0,
+    taxLiability: 0,
+  });
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  const supabase = createBrowserClient();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (!isMounted) return null;
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData(user.id);
+    }
+  }, [user]);
+
+  const fetchDashboardData = async (userId: string) => {
+    try {
+      const { data: txData, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("transaction_date", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching transactions:", error);
+        return;
+      }
+
+      if (txData) {
+        setTransactions(txData);
+        calculateMetrics(txData);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  };
+
+  const calculateMetrics = (txs: any[]) => {
+    let income = 0;
+    let expense = 0;
+    let balance = 0;
+
+    // Simple calculation based on all time transactions for now
+    // In production, this should be filtered by month/date range
+    txs.forEach((tx) => {
+      const amount = Number(tx.amount);
+      if (tx.type === "credit") {
+        income += amount;
+        balance += amount;
+      } else {
+        expense += amount;
+        balance -= amount; // Assuming logic: credit adds to balance, debit subtracts
+      }
+    });
+
+    setMetrics({
+      totalBalance: balance,
+      monthlyIncome: income, // Simplified: using total as monthly for demo
+      monthlyExpense: expense, // Simplified
+      taxLiability: income * 0.1, // Dummy 10% tax
+    });
+
+    // Prepare chart data (group by month - simplified)
+    // This is a placeholder logic for chart
+    const dummyChart = [
+      { name: "Jan", income: income * 0.2, expense: expense * 0.2 },
+      { name: "Feb", income: income * 0.3, expense: expense * 0.3 },
+      { name: "Mar", income: income * 0.5, expense: expense * 0.5 },
+    ];
+    setChartData(
+      dummyChart.length > 0 && income > 0
+        ? dummyChart
+        : [{ name: "No Data", income: 0, expense: 0 }],
+    );
+  };
+
+  if (!isMounted || isLoading) return null;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#05070a] flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-white mb-4">
+            Authentication Required
+          </h1>
+          <p className="text-lg text-slate-400 mb-8">
+            You must be logged in to view your financial dashboard.
+          </p>
+          <a
+            href="/auth"
+            className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Financial Dashboard</h1>
-          <p className="text-slate-400 text-sm">Welcome back. Here's your real-time financial status.</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Financial Dashboard
+          </h1>
+          <p className="text-slate-400 text-sm">
+            Welcome back. Here's your real-time financial status.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-all">
@@ -73,31 +158,31 @@ export default function Dashboard() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <FinancialCard 
-          title="Total Balance" 
-          value="₦1,240,500.00" 
-          subValue="Across 3 connected accounts"
+        <FinancialCard
+          title="Total Balance"
+          value={`₦${metrics.totalBalance.toLocaleString()}`}
+          subValue="Real-time based on transactions"
           icon={Wallet}
-          trend={{ value: '12.5%', isPositive: true }}
+          trend={{ value: "0%", isPositive: true }}
         />
-        <FinancialCard 
-          title="Monthly Income" 
-          value="₦670,000.00" 
-          subValue="Projected for June 2026"
+        <FinancialCard
+          title="Total Income"
+          value={`₦${metrics.monthlyIncome.toLocaleString()}`}
+          subValue="All recorded credits"
           icon={TrendingUp}
-          trend={{ value: '8.2%', isPositive: true }}
+          trend={{ value: "0%", isPositive: true }}
         />
-        <FinancialCard 
-          title="Monthly Expenses" 
-          value="₦450,000.00" 
-          subValue="42% of total income"
+        <FinancialCard
+          title="Total Expenses"
+          value={`₦${metrics.monthlyExpense.toLocaleString()}`}
+          subValue="All recorded debits"
           icon={TrendingDown}
-          trend={{ value: '3.1%', isPositive: false }}
+          trend={{ value: "0%", isPositive: false }}
         />
-        <FinancialCard 
-          title="Tax Liability" 
-          value="₦85,400.00" 
-          subValue="Estimated for Q2 2026"
+        <FinancialCard
+          title="Est. Tax Liability"
+          value={`₦${metrics.taxLiability.toLocaleString()}`}
+          subValue="Estimated 10% flat"
           icon={ShieldCheck}
           className="border-blue-500/20"
         />
@@ -111,75 +196,87 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Income</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Income
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-indigo-500 rounded-full" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expense</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Expense
+                </span>
               </div>
             </div>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockChartData}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#ffffff05"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
                   dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                  tickFormatter={(value) => `₦${value/1000}k`}
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                  tickFormatter={(value) => `₦${(value / 1000).toFixed(0)}k`}
                 />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#0f172a",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                  }}
+                  itemStyle={{ fontSize: "12px", fontWeight: "bold" }}
                 />
-                <Area type="monotone" dataKey="income" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                <Area type="monotone" dataKey="expense" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorIncome)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  stroke="#6366f1"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorExpense)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="glass p-6 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold text-white mb-6">Spending by Category</h3>
+          <h3 className="text-lg font-bold text-white mb-6">
+            Spending by Category
+          </h3>
           <div className="space-y-6">
-            {[
-              { label: 'Groceries', value: 45, color: 'bg-blue-500' },
-              { label: 'Transport', value: 25, color: 'bg-indigo-500' },
-              { label: 'Entertainment', value: 15, color: 'bg-violet-500' },
-              { label: 'Utilities', value: 10, color: 'bg-slate-500' },
-              { label: 'Others', value: 5, color: 'bg-slate-700' },
-            ].map((item) => (
-              <div key={item.label} className="space-y-2">
-                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <span>{item.label}</span>
-                  <span>{item.value}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${item.color} rounded-full transition-all duration-1000`} 
-                    style={{ width: `${item.value}%` }} 
-                  />
-                </div>
-              </div>
-            ))}
+            {/* Placeholder for category breakdown */}
+            <div className="text-center text-slate-500 py-10">
+              No category data available yet
+            </div>
           </div>
           <button className="w-full mt-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest transition-all">
             View Full Analysis
@@ -190,13 +287,24 @@ export default function Dashboard() {
       {/* Recent Transactions Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-white tracking-tight">Recent Activity</h3>
+          <h3 className="text-xl font-bold text-white tracking-tight">
+            Recent Activity
+          </h3>
           <button className="text-blue-500 text-xs font-bold uppercase tracking-widest hover:text-blue-400 transition-colors flex items-center gap-1">
             <span>View All</span>
             <ArrowUpRight size={14} />
           </button>
         </div>
-        <TransactionTable transactions={mockTransactions} />
+        <TransactionTable
+          transactions={transactions.map((t) => ({
+            id: t.id,
+            date: t.transaction_date,
+            description: t.description,
+            amount: Number(t.amount),
+            type: t.type,
+            category: t.category_name || "Uncategorized",
+          }))}
+        />
       </div>
     </div>
   );

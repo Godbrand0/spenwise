@@ -4,7 +4,7 @@ import {
   categorizeTransactions,
   defaultCategories,
 } from "@/lib/categorization/categorizer";
-import { createServerClient } from "@/lib/database/client";
+import { createServerClient } from "@/lib/database/server";
 import { createTransactions, getCategories } from "@/lib/database/utils";
 
 export async function POST(req: NextRequest) {

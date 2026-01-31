@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/database/client";
+import { createServerClient } from "@/lib/database/server";
 import {
   User,
   Category,
@@ -25,7 +25,7 @@ export async function getUserById(
       .from("users")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     return { data, error };
   } catch (error) {
@@ -34,7 +34,7 @@ export async function getUserById(
 }
 
 export async function createUser(
-  user: Omit<User, "id" | "created_at" | "updated_at">,
+  user: Omit<User, "created_at" | "updated_at">,
 ): Promise<DatabaseResponse<User>> {
   try {
     const supabase = await createServerClient();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/database/client";
+import { createServerClient } from "@/lib/database/server";
 import { getStatementsByUserId } from "@/lib/database/utils";
 
 export async function GET(req: NextRequest) {
