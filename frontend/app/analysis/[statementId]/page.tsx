@@ -48,6 +48,7 @@ export default function AnalysisPage({
   console.log("Analysis page loaded with statementId:", statementId);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [statementData, setStatementData] = useState<any>(null);
@@ -69,7 +70,7 @@ export default function AnalysisPage({
         // Fetch statement data
         const { data: statement, error: statementError } = await supabase
           .from("statements")
-          .select("*")
+          .select("*, ai_insights, ai_suggestions, analysis_generated_at")
           .eq("id", statementId)
           .eq("user_id", user.id)
           .single();
@@ -78,6 +79,12 @@ export default function AnalysisPage({
           console.error("Error fetching statement:", statementError);
         } else {
           setStatementData(statement);
+          
+          // Set AI insights from stored data
+          if (statement.ai_insights) {
+            setAiInsights(statement.ai_insights);
+            setAiSuggestions(statement.ai_suggestions || []);
+          }
         }
 
         // Fetch transactions for this statement
@@ -123,14 +130,15 @@ export default function AnalysisPage({
             setPreviousTransactions(prevTransactions || []);
           }
 
-          // Generate AI insights and suggestions
-          if (transactionsData && transactionsData.length > 0) {
-            await generateAIInsights(transactionsData);
+          // Set loading to false first to show the page
+          setLoading(false);
+
+          // If no analysis exists, generate it asynchronously
+          if (!statement?.ai_insights && transactionsData && transactionsData.length > 0) {
+            generateAIInsights(transactionsData);
           }
         }
       }
-
-      setTimeout(() => setLoading(false), 1000);
     };
     fetchData();
   }, [statementId]);
@@ -161,43 +169,27 @@ export default function AnalysisPage({
 
   // Generate AI insights and suggestions
   const generateAIInsights = async (transactionsData: any[]) => {
+    setAiLoading(true);
     try {
-      // Prepare transaction summary for AI analysis
-      const transactionSummary = transactionsData.map((t) => ({
-        description: t.description,
-        amount: t.amount,
-        category: t.category_name,
-        type: t.type,
-        date: t.transaction_date,
-      }));
-
-      // Call AI for insights
-      const insightsPrompt = `
-        Analyze these transactions and provide:
-        1. A brief summary of spending patterns (2-3 sentences)
-        2. 3-4 specific cost-cutting suggestions that can be turned into actionable goals
-        
-        Transactions: ${JSON.stringify(transactionSummary, null, 2)}
-      `;
-
-      const response = await fetch("/api/analytics", {
+      // Call the statement analysis API to generate and store analysis
+      const response = await fetch(`/api/statements/${statementId}/analysis`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          prompt: insightsPrompt,
-          type: "analysis",
-        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setAiInsights(data.insights || "");
         setAiSuggestions(data.suggestions || []);
+      } else {
+        console.error("AI API returned error status:", response.status);
       }
     } catch (error) {
       console.error("Error generating AI insights:", error);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -450,13 +442,21 @@ export default function AnalysisPage({
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Target className="text-blue-500 w-4 h-4" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h4 className="text-sm font-bold text-white mb-1">
                   AI Analysis
                 </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {aiInsights || "Analyzing your spending patterns..."}
-                </p>
+                {aiLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-5/6" />
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-4/6" />
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {aiInsights || "Analyzing your spending patterns..."}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -464,38 +464,57 @@ export default function AnalysisPage({
       </div>
 
       {/* AI Suggestions */}
-      {aiSuggestions.length > 0 && (
+      {(aiLoading || aiSuggestions.length > 0) && (
         <div className="glass p-8 rounded-3xl border border-white/5">
           <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
             <div className="w-1 h-4 bg-green-500 rounded-full" />
             AI Cost-Cutting Suggestions
           </h3>
-          <div className="space-y-4">
-            {aiSuggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
-              >
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Target className="text-green-500 w-4 h-4" />
+          {aiLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
+                >
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Target className="text-green-500 w-4 h-4" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-4/5" />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    {suggestion}
-                  </p>
-                  <button
-                    className="mt-2 text-xs text-green-400 hover:text-green-300 font-medium"
-                    onClick={() => {
-                      // TODO: Create todo/goal from suggestion
-                      console.log("Create todo from suggestion:", suggestion);
-                    }}
-                  >
-                    Create Goal →
-                  </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aiSuggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
+                >
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Target className="text-green-500 w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      {suggestion}
+                    </p>
+                    <button
+                      className="mt-2 text-xs text-green-400 hover:text-green-300 font-medium"
+                      onClick={() => {
+                        // TODO: Create todo/goal from suggestion
+                        console.log("Create todo from suggestion:", suggestion);
+                      }}
+                    >
+                      Create Goal →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

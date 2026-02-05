@@ -78,11 +78,54 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate totals for the statement
+    const totalCredits = transactionsToInsert
+      .filter((t) => t.type === "credit" || t.is_income)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalDebits = transactionsToInsert
+      .filter((t) => t.type === "debit" && !t.is_income)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Update statement with totals
+    const supabase = await createServerClient();
+    await supabase
+      .from("statements")
+      .update({
+        total_credits: totalCredits,
+        total_debits: totalDebits,
+      })
+      .eq("id", statementId);
+
+    // Trigger AI analysis generation for this statement (async, non-blocking)
+    // This will generate and store insights and suggestions in the database
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/statements/${statementId}/analysis`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).catch((error) => {
+      console.error("Error triggering statement analysis:", error);
+      // Don't fail the request if analysis generation fails
+    });
+
+    // Trigger user-level analysis update (async, non-blocking)
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analysis/user`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": userId,
+      },
+    }).catch((error) => {
+      console.error("Error triggering user analysis:", error);
+      // Don't fail the request if analysis generation fails
+    });
+
     return NextResponse.json({
-      transactions: savedTransactions,
-      totalTransactions: transactions.length,
-      categorizedCount: categorizedTransactions.filter((t: any) => t.category)
-        .length,
+      success: true,
+      transactionsCount: transactionsToInsert.length,
+      totalCredits,
+      totalDebits,
     });
   } catch (error) {
     console.error("Error extracting transactions:", error);

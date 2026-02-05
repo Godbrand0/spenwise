@@ -98,15 +98,26 @@ export async function POST(req: NextRequest) {
       fullText += pageText + "\n";
     }
 
-    // Create statement record in database
+    // Extract statement metadata from PDF text
+    const { extractStatementMetadata } = await import("@/lib/extraction/metadata-extractor");
+    const metadata = extractStatementMetadata(fullText);
+
+    // Create statement record in database with extracted metadata
     const statementData = {
       user_id: userId,
       filename: file.name,
       file_size: file.size,
       num_pages: numPages,
       raw_text: fullText,
-      extraction_method: "hybrid",
+      extraction_method: "hybrid" as const,
       processing_status: "completed" as const,
+      bank_name: metadata.bank_name || undefined,
+      statement_period_start: metadata.statement_period_start || undefined,
+      statement_period_end: metadata.statement_period_end || undefined,
+      account_number: metadata.account_number || undefined,
+      account_name: metadata.account_name || undefined,
+      opening_balance: metadata.opening_balance || undefined,
+      closing_balance: metadata.closing_balance || undefined,
     };
 
     const { data: statement, error: statementError } =
@@ -124,8 +135,15 @@ export async function POST(req: NextRequest) {
       text: fullText,
       numPages,
       statementId: statement?.id,
+      metadata: {
+        bankName: metadata.bank_name,
+        periodStart: metadata.statement_period_start,
+        periodEnd: metadata.statement_period_end,
+        accountNumber: metadata.account_number,
+        openingBalance: metadata.opening_balance,
+        closingBalance: metadata.closing_balance,
+      },
       info: {},
-      metadata: {},
     });
   } catch (error) {
     console.error("Error processing PDF:", error);

@@ -27,18 +27,37 @@ export default function StatementsPage() {
   const fetchStatements = async (userId: string) => {
     try {
       console.log("Fetching statements for user:", userId);
-      const { data, error } = await supabase
+      
+      // Fetch statements with AI insights
+      const { data: statementsData, error } = await supabase
         .from("statements")
-        .select("*")
+        .select("*, ai_insights")
         .eq("user_id", userId)
         .order("statement_period_start", { ascending: false });
 
       if (error) {
         console.error("Error fetching statements:", error);
-      } else {
-        console.log("Fetched statements:", data);
-        setStatements(data || []);
+        setLoading(false);
+        return;
       }
+
+      // Fetch transaction counts for each statement
+      const statementsWithCounts = await Promise.all(
+        (statementsData || []).map(async (statement) => {
+          const { count } = await supabase
+            .from("transactions")
+            .select("*", { count: "exact", head: true })
+            .eq("statement_id", statement.id);
+
+          return {
+            ...statement,
+            transaction_count: count || 0,
+          };
+        })
+      );
+
+      console.log("Fetched statements with counts:", statementsWithCounts);
+      setStatements(statementsWithCounts);
     } catch (error) {
       console.error("Unexpected error:", error);
     } finally {
@@ -132,9 +151,20 @@ export default function StatementsPage() {
                   <div className="p-2 bg-blue-500/10 rounded-lg">
                     <FileText className="text-blue-500 w-5 h-5" />
                   </div>
-                  <span className="text-xs text-slate-500 font-mono">
-                    {statement.id.slice(0, 8)}...
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xs text-slate-500 font-mono">
+                      {statement.id.slice(0, 8)}...
+                    </span>
+                    {statement.ai_insights ? (
+                      <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-400 rounded-full font-medium">
+                        Analysis Ready
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 bg-slate-500/10 text-slate-400 rounded-full font-medium">
+                        Processing...
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <h3 className="text-lg font-bold text-white mb-2">

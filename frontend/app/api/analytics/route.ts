@@ -34,11 +34,29 @@ export async function POST(req: NextRequest) {
 
     const response = await callGemini(prompt, systemInstruction);
 
-    // Try to parse as JSON, if fails return as plain text
+    // Try to parse as JSON with robust error handling
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(response || "{}");
+      // Clean the response - sometimes AI wraps JSON in markdown code blocks
+      let cleanedResponse = response?.trim() || "{}";
+      
+      // Remove markdown code block formatting if present
+      if (cleanedResponse.startsWith("```json")) {
+        cleanedResponse = cleanedResponse.replace(/```json\n?/g, "").replace(/```\n?$/g, "");
+      } else if (cleanedResponse.startsWith("```")) {
+        cleanedResponse = cleanedResponse.replace(/```\n?/g, "").replace(/```\n?$/g, "");
+      }
+      
+      parsedResponse = JSON.parse(cleanedResponse);
+      
+      // Validate the response structure
+      if (!parsedResponse.insights || !Array.isArray(parsedResponse.suggestions)) {
+        throw new Error("Invalid response structure");
+      }
     } catch (e) {
+      console.error("Error parsing AI response:", e);
+      console.error("Raw response:", response);
+      
       // If not JSON, create a structured response
       parsedResponse = {
         insights: response || "Unable to generate insights",

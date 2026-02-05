@@ -49,6 +49,7 @@ const COLORS = [
 export default function FinancialAnalysisPage() {
   const { user } = useAppSelector((state) => state.auth);
   const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [allTransactions, setAllTransactions] = useState<any[]>([]);
   const [statements, setStatements] = useState<any[]>([]);
@@ -131,49 +132,44 @@ export default function FinancialAnalysisPage() {
         );
         setMonthlyData(monthlyArray);
 
-        // Generate AI insights and suggestions
-        if (transactionsData.length > 0) {
-          await generateAIInsights(transactionsData);
+        // Fetch stored user analysis
+        const { data: userAnalysis, error: analysisError } = await supabase
+          .from("user_financial_analysis")
+          .select("*")
+          .eq("user_id", userId)
+          .single();
+
+        if (!analysisError && userAnalysis) {
+          // Use stored analysis
+          setAiInsights(userAnalysis.ai_insights || "");
+          setAiSuggestions(userAnalysis.ai_suggestions || []);
+        }
+
+        // Set loading to false first to show the page
+        setLoading(false);
+
+        // If no analysis exists or needs update, generate asynchronously
+        if (!userAnalysis && transactionsData.length > 0) {
+          generateAIInsights(userId);
         }
       }
     } catch (error) {
       console.error("Unexpected error:", error);
-    } finally {
       setLoading(false);
     }
   };
 
   // Generate AI insights and suggestions
-  const generateAIInsights = async (transactionsData: any[]) => {
+  const generateAIInsights = async (userId: string) => {
+    setAiLoading(true);
     try {
-      // Prepare transaction summary for AI analysis
-      const transactionSummary = transactionsData.map((t) => ({
-        description: t.description,
-        amount: t.amount,
-        category: t.category_name,
-        type: t.type,
-        date: t.transaction_date,
-      }));
-
-      // Call AI for insights
-      const insightsPrompt = `
-        Analyze these transactions across all statements and provide:
-        1. A comprehensive summary of overall spending patterns and financial health (3-4 sentences)
-        2. 4-5 specific cost-cutting suggestions that can be turned into actionable financial goals
-        3. Identify trends in income and expenses over time
-        
-        Transactions: ${JSON.stringify(transactionSummary.slice(0, 50), null, 2)}
-      `;
-
-      const response = await fetch("/api/analytics", {
+      // Call the user analysis API to generate and store comprehensive analysis
+      const response = await fetch("/api/analysis/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-user-id": userId,
         },
-        body: JSON.stringify({
-          prompt: insightsPrompt,
-          type: "analysis",
-        }),
       });
 
       if (response.ok) {
@@ -181,6 +177,7 @@ export default function FinancialAnalysisPage() {
         setAiInsights(data.insights || "");
         setAiSuggestions(data.suggestions || []);
       } else {
+        console.error("AI API returned error status:", response.status);
         // Fallback insights if AI fails
         setAiInsights(
           "Based on your transaction history, you have a mix of essential and discretionary spending. Consider reviewing your largest expense categories for potential savings opportunities.",
@@ -196,7 +193,7 @@ export default function FinancialAnalysisPage() {
       console.error("Error generating AI insights:", error);
       // Fallback insights if AI fails
       setAiInsights(
-        "Based on your transaction history, you have a mix of essential and discretionary spending. Consider reviewing your largest expense categories for potential savings opportunities.",
+        "Unable to generate AI insights at this time. Please try again later.",
       );
       setAiSuggestions([
         "Review subscription services and cancel unused ones",
@@ -204,6 +201,8 @@ export default function FinancialAnalysisPage() {
         "Look for opportunities to reduce utility costs",
         "Consider automating savings transfers",
       ]);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -530,13 +529,21 @@ export default function FinancialAnalysisPage() {
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Target className="text-blue-500 w-4 h-4" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h4 className="text-sm font-bold text-white mb-1">
                   AI Analysis
                 </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {aiInsights || "Analyzing your spending patterns..."}
-                </p>
+                {aiLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-5/6" />
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-4/6" />
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {aiInsights || "Analyzing your spending patterns..."}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -544,38 +551,57 @@ export default function FinancialAnalysisPage() {
       </div>
 
       {/* AI Suggestions */}
-      {aiSuggestions.length > 0 && (
+      {(aiLoading || aiSuggestions.length > 0) && (
         <div className="glass p-8 rounded-3xl border border-white/5">
           <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
             <div className="w-1 h-4 bg-green-500 rounded-full" />
             AI Cost-Cutting Suggestions
           </h3>
-          <div className="space-y-4">
-            {aiSuggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
-              >
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Target className="text-green-500 w-4 h-4" />
+          {aiLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
+                >
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Target className="text-green-500 w-4 h-4" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-4/5" />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    {suggestion}
-                  </p>
-                  <button
-                    className="mt-2 text-xs text-green-400 hover:text-green-300 font-medium"
-                    onClick={() => {
-                      // TODO: Create todo/goal from suggestion
-                      console.log("Create todo from suggestion:", suggestion);
-                    }}
-                  >
-                    Create Goal →
-                  </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aiSuggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
+                >
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Target className="text-green-500 w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      {suggestion}
+                    </p>
+                    <button
+                      className="mt-2 text-xs text-green-400 hover:text-green-300 font-medium"
+                      onClick={() => {
+                        // TODO: Create todo/goal from suggestion
+                        console.log("Create todo from suggestion:", suggestion);
+                      }}
+                    >
+                      Create Goal →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
