@@ -46,14 +46,14 @@ export const LoginForm: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Email Address</label>
+          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Email Address</label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
               placeholder="name@example.com"
               required
             />
@@ -61,14 +61,14 @@ export const LoginForm: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Password</label>
+          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Password</label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
               placeholder="••••••••"
               required
             />
@@ -76,7 +76,7 @@ export const LoginForm: React.FC = () => {
         </div>
 
         {error && (
-          <div className="text-rose-500 text-[10px] font-bold uppercase tracking-wider text-center border border-rose-500/20 bg-rose-500/5 p-3 rounded-xl">
+          <div className="text-error text-[10px] font-bold uppercase tracking-wider text-center border border-error/20 bg-error/5 p-3 rounded-xl">
             {error}
           </div>
         )}
@@ -84,10 +84,10 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none"
+          className="btn-primary w-full py-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
         >
           <LogIn className="w-4 h-4" />
-          {loading ? 'Processing...' : 'Sign In'}
+          {loading ? 'Processing...' : 'Secure Entry'}
         </button>
       </form>
 
@@ -99,10 +99,10 @@ export const LoginForm: React.FC = () => {
 
       <button
         onClick={handleGoogleLogin}
-        className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all shadow-lg shadow-white/5"
+        className="w-full bg-white text-secondary font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all shadow-lg shadow-white/5"
       >
         <Chrome className="w-4 h-4" />
-        Continue with Google
+        Authenticate with Google
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Clock,
 } from "lucide-react";
+import Link from "next/link";
 import { FinancialCard } from "@/components/FinancialCard";
 import { createBrowserClient } from "@/lib/database/client";
 
@@ -38,20 +39,23 @@ export default function TaxPage() {
   
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05070a]">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-4">
-            Authentication Required
+      <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-success/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-success/20">
+            <Lock className="text-success w-10 h-10" />
+          </div>
+          <h1 className="text-4xl font-black text-text-primary mb-4 tracking-tight">
+            Secure Vault
           </h1>
-          <p className="text-lg text-slate-400 mb-8">
-            You must be logged in to access the tax center.
+          <p className="text-lg text-text-secondary mb-10 leading-relaxed font-medium">
+            Access secure tax estimation and automated compliance tracking.
           </p>
-          <a
+          <Link
             href="/auth"
-            className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+            className="btn-primary w-full py-4 text-center text-sm tracking-[0.2em]"
           >
-            Sign In
-          </a>
+            AUTHENTICATE ACCESS
+          </Link>
         </div>
       </div>
     );
@@ -59,11 +63,11 @@ export default function TaxPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05070a]">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-[0.3em]">
-            Accessing Tax Center...
+      <div className="flex flex-col items-center justify-center py-40 animate-fade-in">
+        <div className="text-center space-y-8">
+          <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full animate-spin mx-auto shadow-2xl shadow-primary/20" />
+          <p className="text-text-muted font-black text-xs uppercase tracking-[0.4em] animate-pulse">
+            Accessing Secure Tax Vault...
           </p>
         </div>
       </div>
@@ -71,28 +75,26 @@ export default function TaxPage() {
   }
 
   return (
-    <div className="p-8 space-y-8 animate-fade-in">
+    <div className="py-8 space-y-10 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
-            <ShieldCheck className="text-emerald-500 w-6 h-6" />
+          <div className="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center border border-success/20 shadow-lg shadow-success/10">
+            <ShieldCheck className="text-success w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-3xl font-bold text-text-primary tracking-tight">
               Tax Center
             </h1>
-            <p className="text-slate-400 text-sm">
-              Compliance tracking & automated tax estimations.
+            <p className="text-text-secondary text-sm">
+              Automated compliance and estimation intelligence
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
-            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-              Compliant
-            </span>
+          <div className="badge badge-success px-4 py-2 border border-success/20">
+            <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse mr-2" />
+            <span>Fully Compliant</span>
           </div>
         </div>
       </div>
@@ -122,14 +124,14 @@ export default function TaxPage() {
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass p-8 rounded-3xl border border-white/5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-5">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="card-lg bg-surface relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
               <Lock size={120} />
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <Clock className="text-blue-500" size={24} />
+            <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3">
+              <Clock className="text-primary" size={24} />
               Upcoming Obligations
             </h3>
 
@@ -152,32 +154,32 @@ export default function TaxPage() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-center justify-between p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group"
+                  className="flex items-center justify-between p-6 rounded-2xl bg-secondary-medium/50 border border-border hover:border-primary/30 transition-all group/item"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                      <FileText className="text-blue-500 w-5 h-5" />
+                    <div className="w-12 h-12 rounded-xl bg-primary-lighter flex items-center justify-center border border-primary/20">
+                      <FileText className="text-primary w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white">
+                      <h4 className="text-base font-bold text-text-primary group-hover/item:text-primary transition-colors">
                         {item.title}
                       </h4>
-                      <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">
+                      <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mt-0.5">
                         {item.period}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-10">
                     <div className="text-right">
-                      <p className="text-sm font-bold text-white">
+                      <p className="text-lg font-bold text-text-primary">
                         {item.amount}
                       </p>
-                      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
+                      <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest">
                         Due {item.due}
                       </p>
                     </div>
-                    <button className="p-2 rounded-lg bg-blue-600/10 text-blue-500 opacity-0 group-hover:opacity-100 transition-all">
-                      <ArrowRight size={18} />
+                    <button className="p-3 rounded-xl bg-primary/10 text-primary opacity-0 group-hover/item:opacity-100 transition-all hover:bg-primary hover:text-white">
+                      <ArrowRight size={20} />
                     </button>
                   </div>
                 </div>
@@ -185,9 +187,9 @@ export default function TaxPage() {
             </div>
           </div>
 
-          <div className="glass p-8 rounded-3xl border border-white/5">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <CheckCircle2 className="text-emerald-500" size={24} />
+          <div className="card-lg bg-surface">
+            <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3">
+              <CheckCircle2 className="text-success" size={24} />
               Payment History
             </h3>
             <div className="space-y-4">
@@ -207,27 +209,27 @@ export default function TaxPage() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-emerald-500/[0.02] border border-emerald-500/5"
+                  className="flex items-center justify-between p-5 rounded-2xl bg-success/5 border border-success/10 hover:border-success/30 transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                      <CheckCircle2 className="text-emerald-500 w-4 h-4" />
+                    <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                      <CheckCircle2 className="text-success w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-white">
+                      <h4 className="text-sm font-bold text-text-primary">
                         {item.title}
                       </h4>
-                      <p className="text-[10px] text-slate-500 font-mono">
-                        {item.period}
+                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">
+                        Settled • {item.period}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-emerald-500">
+                    <p className="text-base font-bold text-success">
                       {item.amount}
                     </p>
-                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
-                      Paid {item.date}
+                    <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest">
+                      Confirmed {item.date}
                     </p>
                   </div>
                 </div>
@@ -237,25 +239,26 @@ export default function TaxPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="glass p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-blue-600/10 to-transparent">
-            <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-              <AlertCircle className="text-blue-500" size={16} />
+          <div className="card bg-primary-lighter border border-primary/10 relative overflow-hidden group">
+            <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-primary/5 rounded-full transition-transform group-hover:scale-150" />
+            <h4 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-3">
+              <AlertCircle className="text-primary" size={18} />
               Tax Optimization
             </h4>
-            <p className="text-xs text-slate-400 leading-relaxed mb-6">
+            <p className="text-xs text-text-secondary leading-relaxed mb-6">
               Based on your transaction history, you may be eligible for
-              additional consolidated relief allowances.
+              additional consolidated relief allowances and VAT exemptions.
             </p>
-            <button className="w-full py-3 rounded-xl bg-blue-600 text-white text-xs font-bold uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">
-              Recalculate Reliefs
+            <button className="w-full btn-primary text-xs uppercase tracking-widest py-3">
+              Recalculate Savings
             </button>
           </div>
 
-          <div className="glass p-6 rounded-3xl border border-white/5">
-            <h4 className="text-sm font-bold text-white mb-4">
+          <div className="card bg-surface border-border/50">
+            <h4 className="text-sm font-bold text-text-primary mb-6">
               Compliance Checklist
             </h4>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {[
                 { label: "TIN Verification", status: true },
                 { label: "Income Classification", status: true },
@@ -266,21 +269,20 @@ export default function TaxPage() {
                   key={item.label}
                   className="flex items-center justify-between"
                 >
-                  <span className="text-xs text-slate-400">{item.label}</span>
+                  <span className="text-xs text-text-secondary font-medium">{item.label}</span>
                   {item.status ? (
-                    <CheckCircle2 size={14} className="text-emerald-500" />
+                    <CheckCircle2 size={16} className="text-success shadow-sm" />
                   ) : (
-                    <div className="w-3.5 h-3.5 rounded-full border border-slate-700" />
+                    <div className="w-4 h-4 rounded-full border-2 border-border" />
                   )}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="p-6 rounded-3xl border border-amber-500/10 bg-amber-500/5">
-            <p className="text-[10px] text-amber-500/80 leading-relaxed italic">
-              Disclaimer: These estimates are for informational purposes.
-              Consult a certified tax professional for official filings.
+          <div className="p-6 rounded-3xl border border-warning/10 bg-warning/5">
+            <p className="text-[10px] text-warning font-bold leading-relaxed italic text-center uppercase tracking-tighter">
+              Disclaimer: Estimates are for informational purposes only.
             </p>
           </div>
         </div>

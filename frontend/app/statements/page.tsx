@@ -102,41 +102,42 @@ export default function StatementsPage() {
   }
 
   return (
-    <div className="p-8 space-y-8 animate-fade-in">
+    <div className="py-8 space-y-8 animate-fade-in">
       {/* Navigation */}
       <div className="flex items-center gap-4">
         <Link
           href="/"
-          className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+          className="p-3 bg-secondary-medium hover:bg-secondary-light rounded-xl transition-all border border-border group"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={20} className="text-text-secondary group-hover:text-white" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-text-primary tracking-tight">
             Bank Statements
           </h1>
-          <p className="text-slate-400 text-xs font-mono uppercase tracking-wider">
-            View and analyze your uploaded statements
+          <p className="text-text-secondary text-xs font-bold uppercase tracking-wider">
+            View and analyze your financial history
           </p>
         </div>
       </div>
 
       {statements.length === 0 ? (
-        <div className="glass p-12 rounded-3xl border border-white/5 text-center">
-          <FileText className="h-16 w-16 text-slate-500 mx-auto mb-6" />
-          <h3 className="text-xl font-bold text-white mb-4">
+        <div className="card-lg p-16 text-center border-dashed border-2 border-border/50">
+          <div className="w-20 h-20 bg-primary-lighter rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <FileText className="h-10 w-10 text-primary" />
+          </div>
+          <h3 className="text-xl font-bold text-text-primary mb-4">
             No Statements Found
           </h3>
-          <p className="text-slate-400 mb-8 max-w-md mx-auto">
-            You haven't uploaded any bank statements yet. Upload your first
-            statement to get started with AI-powered financial analysis.
+          <p className="text-text-secondary mb-8 max-w-md mx-auto leading-relaxed">
+            Upload your monthly bank statements to unlock AI-powered insights, spending patterns, and automated tax estimations.
           </p>
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all"
+            className="btn-primary"
           >
-            <FileText size={16} />
-            <span>Upload Statement</span>
+            <FileText size={18} className="mr-2" />
+            <span>Upload Your First Statement</span>
           </Link>
         </div>
       ) : (
@@ -145,36 +146,38 @@ export default function StatementsPage() {
             {statements.map((statement) => (
               <div
                 key={statement.id}
-                className="glass p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-all"
+                className="card group hover:border-primary/30 transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <FileText className="text-blue-500 w-5 h-5" />
+                <div className="flex items-start justify-between mb-6">
+                  <div className="p-3 bg-primary-lighter rounded-xl">
+                    <FileText className="text-primary w-6 h-6" />
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs text-slate-500 font-mono">
-                      {statement.id.slice(0, 8)}...
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="text-[10px] text-text-muted font-bold tracking-widest uppercase">
+                      ID: {statement.id.slice(0, 8)}
                     </span>
                     {statement.ai_insights ? (
-                      <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-400 rounded-full font-medium">
+                      <span className="badge badge-success">
                         Analysis Ready
                       </span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 bg-slate-500/10 text-slate-400 rounded-full font-medium">
+                      <span className="badge badge-neutral animate-pulse">
                         Processing...
                       </span>
                     )}
                   </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-white mb-2">
+                <h3 className="text-lg font-bold text-text-primary mb-2 group-hover:text-primary transition-colors">
                   {statement.bank_name || "Bank"} Statement
                 </h3>
 
-                <div className="space-y-2 text-sm text-slate-400 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>
+                <div className="space-y-3 text-sm text-text-secondary mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-secondary-medium flex items-center justify-center">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">
                       {new Date(
                         statement.statement_period_start ||
                           statement.created_at,
@@ -185,43 +188,43 @@ export default function StatementsPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>{statement.transaction_count || 0} transactions</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-secondary-medium flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">{statement.transaction_count || 0} transactions</span>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Link
-                    href={`/analysis/${statement.id}`}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all"
-                  >
-                    <Eye size={14} />
-                    <span>Analyze</span>
-                  </Link>
-                </div>
+                <Link
+                  href={`/analysis/${statement.id}`}
+                  className="w-full btn-primary flex items-center justify-center gap-2"
+                >
+                  <Eye size={16} />
+                  <span>View Full Analysis</span>
+                </Link>
               </div>
             ))}
           </div>
 
           {/* Upload CTA */}
-          <div className="glass p-6 rounded-2xl border border-white/5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-1">
+          <div className="card-lg bg-primary-lighter/30 border-primary/10">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="text-center md:text-left">
+                <h3 className="text-xl font-bold text-text-primary mb-2">
                   Need More Analysis?
                 </h3>
-                <p className="text-sm text-slate-400">
-                  Upload additional statements to track your financial progress
-                  over time
+                <p className="text-sm text-text-secondary max-w-xl leading-relaxed">
+                  Keep your dashboard up to date by uploading your latest statements. 
+                  Spenwise automatically categorizes your spending and updates your tax estimations.
                 </p>
               </div>
               <Link
                 href="/upload"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all"
+                className="btn-primary whitespace-nowrap"
               >
-                <FileText size={16} />
-                <span>Upload New</span>
+                <FileText size={18} className="mr-2" />
+                <span>Upload New Statement</span>
               </Link>
             </div>
           </div>

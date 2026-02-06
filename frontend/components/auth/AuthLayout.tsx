@@ -8,33 +8,40 @@ interface AuthLayoutProps {
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-4 font-mono">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tighter text-[#00ff00] mb-2 uppercase">
+    <div className="min-h-screen bg-background text-text-primary flex flex-col items-center justify-center p-4">
+      {/* Background decorative elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[20%] -right-[10%] w-[30%] h-[30%] bg-primary/5 blur-[100px] rounded-full" />
+      </div>
+
+      <div className="w-full max-w-md animate-fade-in">
+        <div className="mb-10 text-center space-y-2">
+          <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-primary/20 mb-6">
+            <span className="text-2xl font-black text-white italic">S</span>
+          </div>
+          <h1 className="text-4xl font-black tracking-tight text-text-primary">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-gray-400 text-sm uppercase tracking-widest">
+            <p className="text-text-secondary text-sm font-medium">
               {subtitle}
             </p>
           )}
         </div>
         
-        <div className="bg-[#111] border border-[#333] p-8 rounded-lg shadow-2xl relative overflow-hidden">
-          {/* Decorative elements for "Mission Control" feel */}
-          <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#00ff00]"></div>
-          <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#00ff00]"></div>
-          <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#00ff00]"></div>
-          <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[#00ff00]"></div>
+        <div className="card-lg bg-surface relative overflow-hidden shadow-2xl shadow-primary/5">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           
           <div className="relative z-10">
             {children}
           </div>
         </div>
         
-        <div className="mt-8 text-center text-xs text-gray-600 uppercase tracking-widest">
-          Spenwise Security Protocol v1.0.4
+        <div className="mt-10 text-center">
+          <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.4em] opacity-40">
+            Spenwise Financial Systems • Secure Terminal
+          </p>
         </div>
       </div>
     </div>

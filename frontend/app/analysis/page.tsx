@@ -28,6 +28,7 @@ import {
   Printer,
   FileText,
   Calendar,
+  BarChart2,
 } from "lucide-react";
 import Link from "next/link";
 import { FinancialCard } from "@/components/FinancialCard";
@@ -36,14 +37,14 @@ import { createBrowserClient } from "@/lib/database/client";
 import { useAppSelector } from "@/lib/store/hooks";
 
 const COLORS = [
-  "#3B82F6",
-  "#6366F1",
-  "#8B5CF6",
-  "#EC4899",
-  "#F43F5E",
-  "#F59E0B",
-  "#10B981",
-  "#06B6D4",
+  "#0D8282", // Primary
+  "#238636", // Success
+  "#DA3633", // Error
+  "#D29922", // Warning
+  "#161B22", // Secondary Medium
+  "#3B82F6", // Blue
+  "#6366F1", // Indigo
+  "#8B5CF6", // Violet
 ];
 
 export default function FinancialAnalysisPage() {
@@ -210,20 +211,23 @@ export default function FinancialAnalysisPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05070a]">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-4">
-            Authentication Required
+      <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-primary/20">
+            <BarChart2 className="text-primary w-10 h-10" />
+          </div>
+          <h1 className="text-4xl font-black text-text-primary mb-4 tracking-tight">
+            Restricted Access
           </h1>
-          <p className="text-lg text-slate-400 mb-8">
-            You must be logged in to view financial analysis.
+          <p className="text-lg text-text-secondary mb-10 leading-relaxed font-medium">
+            Unlock advanced financial intelligence and spending insights.
           </p>
-          <a
+          <Link
             href="/auth"
-            className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+            className="btn-primary w-full py-4 text-center text-base tracking-[0.2em]"
           >
-            Sign In
-          </a>
+            SIGN IN TO ANALYZE
+          </Link>
         </div>
       </div>
     );
@@ -231,11 +235,11 @@ export default function FinancialAnalysisPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05070a]">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-400 font-mono text-xs uppercase tracking-[0.3em] animate-pulse">
-            Generating Financial Analysis...
+      <div className="flex flex-col items-center justify-center py-40 animate-fade-in">
+        <div className="text-center space-y-6">
+          <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full animate-spin mx-auto shadow-2xl shadow-primary/20" />
+          <p className="text-text-muted font-black text-xs uppercase tracking-[0.4em] animate-pulse">
+            Executing Intelligence Protocols...
           </p>
         </div>
       </div>
@@ -301,7 +305,7 @@ export default function FinancialAnalysisPage() {
 
   if (statements.length === 0) {
     return (
-      <div className="p-8 space-y-8 animate-fade-in">
+      <div className="py-8 space-y-8 animate-fade-in">
         <div className="flex items-center gap-4">
           <Link
             href="/"
@@ -341,42 +345,41 @@ export default function FinancialAnalysisPage() {
   }
 
   return (
-    <div className="p-8 space-y-8 animate-fade-in">
+    <div className="py-8 space-y-10 animate-fade-in">
       {/* Navigation & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+            className="p-3 bg-secondary-medium hover:bg-secondary-light rounded-xl transition-all border border-border group"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={20} className="text-text-secondary group-hover:text-white" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-3xl font-bold text-text-primary tracking-tight">
               Financial Analysis
             </h1>
-            <p className="text-slate-400 text-xs font-mono uppercase tracking-wider">
-              Comprehensive overview of your financial health
+            <p className="text-text-secondary text-xs font-bold uppercase tracking-wider">
+              AI-Powered insights and spending patterns
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/statements"
-            className="text-sm text-blue-400 hover:text-blue-300 font-medium"
+            className="text-sm font-bold text-primary hover:text-primary-light hidden md:block"
           >
             View All Statements →
           </Link>
-          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-slate-400 hover:text-white">
-            <Share2 size={18} />
-          </button>
-          <button className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-slate-400 hover:text-white">
-            <Printer size={18} />
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all">
-            <Download size={16} />
-            <span>Export PDF</span>
-          </button>
+          <div className="flex gap-2">
+            <button className="p-2 bg-secondary-medium hover:bg-secondary-light rounded-xl transition-all text-text-secondary hover:text-white border border-border">
+              <Share2 size={18} />
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-light text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 transition-all">
+              <Download size={16} />
+              <span>Export PDF</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -412,13 +415,14 @@ export default function FinancialAnalysisPage() {
       </div>
 
       {/* Detailed Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass p-8 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold text-white mb-8 flex items-center gap-2">
-            <div className="w-1 h-4 bg-blue-500 rounded-full" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="card-lg bg-surface relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3 relative z-10">
+            <div className="w-1.5 h-6 bg-primary rounded-full" />
             Spending Distribution
           </h3>
-          <div className="h-[350px] w-full">
+          <div className="h-[350px] w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -427,44 +431,45 @@ export default function FinancialAnalysisPage() {
                   cy="50%"
                   innerRadius={80}
                   outerRadius={120}
-                  paddingAngle={5}
+                  paddingAngle={8}
                   dataKey="value"
                 >
                   {categoryData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
-                      stroke="rgba(255,255,255,0.05)"
+                      stroke="rgba(0,0,0,0.2)"
                       strokeWidth={2}
                     />
                   ))}
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#0f172a",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "12px",
+                    backgroundColor: "var(--color-surface)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-md)",
+                    boxShadow: "var(--shadow-lg)",
                   }}
-                  itemStyle={{ fontSize: "12px", fontWeight: "bold" }}
+                  itemStyle={{ fontSize: "12px", fontWeight: "bold", color: "var(--color-text-primary)" }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-2 gap-4 mt-8">
+          <div className="grid grid-cols-2 gap-4 mt-8 relative z-10">
             {categoryData.slice(0, 6).map((item, index) => (
               <div
                 key={item.name}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5"
+                className="flex items-center gap-3 p-4 rounded-2xl bg-secondary-medium/50 border border-border group/item hover:border-primary/30 transition-all"
               >
                 <div
-                  className="w-2 h-2 rounded-full"
+                  className="w-3 h-3 rounded-full shadow-sm"
                   style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 />
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">
                     {item.name}
                   </span>
-                  <span className="text-sm font-bold text-white">
+                  <span className="text-sm font-bold text-text-primary group-hover/item:text-primary transition-colors">
                     ₦{item.value.toLocaleString()}
                   </span>
                 </div>
@@ -473,74 +478,77 @@ export default function FinancialAnalysisPage() {
           </div>
         </div>
 
-        <div className="glass p-8 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold text-white mb-8 flex items-center gap-2">
-            <div className="w-1 h-4 bg-indigo-500 rounded-full" />
+        <div className="card-lg bg-surface relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3 relative z-10">
+            <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
             Monthly Trend
           </h3>
-          <div className="h-[350px] w-full">
+          <div className="h-[350px] w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#ffffff05"
+                  stroke="var(--color-border)"
                   vertical={false}
                 />
                 <XAxis
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                  tick={{ fill: "var(--color-text-secondary)", fontSize: 10, fontWeight: 700 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
+                  tick={{ fill: "var(--color-text-secondary)", fontSize: 10, fontWeight: 700 }}
                 />
                 <Tooltip
-                  cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                  cursor={{ fill: "var(--color-primary-lighter)" }}
                   contentStyle={{
-                    backgroundColor: "#0f172a",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "12px",
+                    backgroundColor: "var(--color-surface)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-md)",
+                    boxShadow: "var(--shadow-lg)",
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="income"
                   stackId="1"
-                  stroke="#10b981"
-                  fill="#10b981"
-                  fillOpacity={0.6}
+                  stroke="var(--color-success)"
+                  fill="var(--color-success)"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
                 />
                 <Area
                   type="monotone"
                   dataKey="expenses"
                   stackId="2"
-                  stroke="#ef4444"
-                  fill="#ef4444"
-                  fillOpacity={0.6}
+                  stroke="var(--color-error)"
+                  fill="var(--color-error)"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-8 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <Target className="text-blue-500 w-4 h-4" />
+          <div className="mt-8 p-5 rounded-2xl bg-primary-lighter border border-primary/10 relative z-10 group/ai cursor-help">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-primary rounded-xl shadow-lg shadow-primary/20">
+                <Target className="text-white w-5 h-5" />
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-bold text-white mb-1">
-                  AI Analysis
+                <h4 className="text-sm font-bold text-text-primary mb-1">
+                  AI Financial Intelligence
                 </h4>
                 {aiLoading ? (
-                  <div className="space-y-2">
-                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-full" />
-                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-5/6" />
-                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-4/6" />
+                  <div className="space-y-2 mt-2">
+                    <div className="h-3 bg-border rounded animate-pulse w-full" />
+                    <div className="h-3 bg-border rounded animate-pulse w-5/6" />
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-text-secondary leading-relaxed group-hover/ai:text-text-primary transition-colors">
                     {aiInsights || "Analyzing your spending patterns..."}
                   </p>
                 )}
@@ -552,50 +560,47 @@ export default function FinancialAnalysisPage() {
 
       {/* AI Suggestions */}
       {(aiLoading || aiSuggestions.length > 0) && (
-        <div className="glass p-8 rounded-3xl border border-white/5">
-          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-            <div className="w-1 h-4 bg-green-500 rounded-full" />
-            AI Cost-Cutting Suggestions
+        <div className="card-lg bg-surface relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-success/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3 relative z-10">
+            <div className="w-1.5 h-6 bg-success rounded-full" />
+            AI Cost-Cutting Intelligence
           </h3>
           {aiLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
+            <div className="space-y-4 relative z-10">
+              {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
+                  className="flex items-start gap-4 p-5 rounded-2xl bg-secondary-medium/50 border border-border animate-pulse"
                 >
-                  <div className="p-2 bg-green-500/10 rounded-lg">
-                    <Target className="text-green-500 w-4 h-4" />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-full" />
-                    <div className="h-3 bg-slate-700/50 rounded animate-pulse w-4/5" />
+                  <div className="p-3 bg-border rounded-xl w-10 h-10" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-4 bg-border rounded w-full" />
+                    <div className="h-4 bg-border rounded w-4/5" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
               {aiSuggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10"
+                  className="flex items-start gap-4 p-5 rounded-2xl bg-secondary-medium/50 border border-border hover:border-success/30 transition-all group/suggestion"
                 >
-                  <div className="p-2 bg-green-500/10 rounded-lg">
-                    <Target className="text-green-500 w-4 h-4" />
+                  <div className="p-3 bg-success/10 rounded-xl group-hover/suggestion:bg-success/20 transition-colors">
+                    <Target className="text-success w-5 h-5" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-sm text-text-secondary leading-relaxed group-hover/suggestion:text-text-primary transition-colors">
                       {suggestion}
                     </p>
                     <button
-                      className="mt-2 text-xs text-green-400 hover:text-green-300 font-medium"
-                      onClick={() => {
-                        // TODO: Create todo/goal from suggestion
-                        console.log("Create todo from suggestion:", suggestion);
-                      }}
+                      className="mt-3 text-xs font-bold text-success hover:text-success-light transition-colors flex items-center gap-1"
+                      onClick={() => console.log("Create goal:", suggestion)}
                     >
-                      Create Goal →
+                      <span>Create Saving Goal</span>
+                      <TrendingUp size={12} />
                     </button>
                   </div>
                 </div>
@@ -606,28 +611,32 @@ export default function FinancialAnalysisPage() {
       )}
 
       {/* Recent Transactions */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-white tracking-tight">
-            Recent Transactions
+          <h3 className="text-2xl font-bold text-text-primary tracking-tight">
+            Comprehensive Ledger
           </h3>
-          <Link
-            href="/transactions"
-            className="text-sm text-blue-400 hover:text-blue-300 font-medium"
-          >
-            View All →
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/statements"
+              className="text-sm font-bold text-primary hover:text-primary-light"
+            >
+              Manage Statements →
+            </Link>
+          </div>
         </div>
-        <TransactionTable
-          transactions={allTransactions.slice(0, 10).map((t) => ({
-            id: t.id,
-            date: t.transaction_date,
-            description: t.description,
-            amount: t.amount,
-            type: t.type,
-            category: t.category_name,
-          }))}
-        />
+        <div className="card overflow-hidden border-border bg-surface/50 backdrop-blur-sm">
+          <TransactionTable
+            transactions={allTransactions.slice(0, 10).map((t) => ({
+              id: t.id,
+              date: t.transaction_date,
+              description: t.description,
+              amount: t.amount,
+              type: t.type,
+              category: t.category_name,
+            }))}
+          />
+        </div>
       </div>
     </div>
   );

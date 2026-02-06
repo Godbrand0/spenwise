@@ -145,20 +145,19 @@ export const SignupForm: React.FC = () => {
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center border border-blue-500/20 mx-auto mb-4">
-            <ShieldCheck className="text-blue-500 w-6 h-6" />
+          <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center border border-success/20 mx-auto mb-6 shadow-xl shadow-success/10">
+            <ShieldCheck className="text-success w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-white">Verify Your Email</h3>
-          <p className="text-slate-400 text-xs leading-relaxed">
-            We've sent a 6-digit code to{" "}
-            <span className="text-white font-medium">{email}</span>. Enter it
-            below to complete your registration.
+          <h3 className="text-xl font-bold text-text-primary">Verify Your Identity</h3>
+          <p className="text-text-secondary text-sm leading-relaxed">
+            A 6-digit verification code has been dispatched to{" "}
+            <span className="text-primary font-bold">{email}</span>.
           </p>
         </div>
 
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
               Verification Code
             </label>
             <input
@@ -167,7 +166,7 @@ export const SignupForm: React.FC = () => {
               onChange={(e) =>
                 setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
               }
-              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-4 text-center text-2xl font-bold tracking-[0.5em] text-white focus:border-blue-500 outline-none transition-all placeholder:text-white/5"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-4 text-center text-3xl font-black tracking-[0.5em] text-text-primary focus:border-primary outline-none transition-all placeholder:text-text-muted/20"
               placeholder="000000"
               required
             />
@@ -182,9 +181,9 @@ export const SignupForm: React.FC = () => {
           <button
             type="submit"
             disabled={loading || otp.length !== 6}
-            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none"
+            className="btn-primary w-full py-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
           >
-            {loading ? "Verifying..." : "Verify Account"}
+            {loading ? "Verifying..." : "Confirm Protocol"}
           </button>
         </form>
 
@@ -204,16 +203,16 @@ export const SignupForm: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
+          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
             Email Address
           </label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
               placeholder="name@example.com"
               required
             />
@@ -221,29 +220,29 @@ export const SignupForm: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
+          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
             First Name (Optional)
           </label>
           <input
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 text-sm text-white focus:border-blue-500 outline-none transition-all"
+            className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 text-sm text-text-primary focus:border-primary outline-none transition-all"
             placeholder="John"
           />
         </div>
 
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
+          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
               placeholder="••••••••"
               required
             />
@@ -251,7 +250,7 @@ export const SignupForm: React.FC = () => {
         </div>
 
         {error && (
-          <div className="text-rose-500 text-[10px] font-bold uppercase tracking-wider text-center border border-rose-500/20 bg-rose-500/5 p-3 rounded-xl">
+          <div className="text-error text-[10px] font-bold uppercase tracking-wider text-center border border-error/20 bg-error/5 p-3 rounded-xl">
             {error}
           </div>
         )}
@@ -259,7 +258,7 @@ export const SignupForm: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none"
+          className="btn-primary w-full py-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
         >
           <UserPlus className="w-4 h-4" />
           {loading ? "Processing..." : "Create Account"}
@@ -276,10 +275,10 @@ export const SignupForm: React.FC = () => {
 
       <button
         onClick={handleGoogleLogin}
-        className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all shadow-lg shadow-white/5"
+        className="w-full bg-white text-secondary font-bold py-3 rounded-xl uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-slate-100 transition-all shadow-lg shadow-white/5"
       >
         <Chrome className="w-4 h-4" />
-        Continue with Google
+        Authenticate with Google
       </button>
     </div>
   );
