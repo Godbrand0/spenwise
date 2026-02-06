@@ -10,12 +10,13 @@ export async function callGemini(
   const startTime = Date.now();
 
   try {
-    const contents = systemInstruction
-      ? `${systemInstruction}\n\n${prompt}`
-      : prompt;
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction,
+      },
     });
 
     if (!response || !response.text) {
@@ -24,7 +25,7 @@ export async function callGemini(
 
     // Track usage
     await logTokenUsage({
-      inputTokens: 0, // Usage metadata not available in this SDK version
+      inputTokens: 0,
       outputTokens: 0,
       latency: Date.now() - startTime,
       timestamp: new Date(),

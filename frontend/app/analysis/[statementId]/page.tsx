@@ -504,9 +504,39 @@ export default function AnalysisPage({
                     </p>
                     <button
                       className="mt-2 text-xs text-green-400 hover:text-green-300 font-medium"
-                      onClick={() => {
-                        // TODO: Create todo/goal from suggestion
-                        console.log("Create todo from suggestion:", suggestion);
+                      onClick={async () => {
+                        try {
+                          // Create todo from AI suggestion
+                          const todoData = {
+                            userId: user.id,
+                            title: suggestion.length > 50 ? suggestion.substring(0, 47) + "..." : suggestion,
+                            description: "AI-generated cost-cutting suggestion based on your spending analysis",
+                            category: "savings" as const,
+                            priority: "medium" as const,
+                            targetAmount: null,
+                            targetDate: null,
+                            isRecurring: false,
+                            recurringFrequency: null,
+                            tags: ["AI-suggestion", "cost-cutting"],
+                          };
+
+                          const response = await fetch("/api/todos", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(todoData),
+                          });
+
+                          if (response.ok) {
+                            // Redirect to todos page to see the new goal
+                            window.location.href = "/todos";
+                          } else {
+                            console.error("Failed to create todo from suggestion");
+                          }
+                        } catch (error) {
+                          console.error("Error creating todo from suggestion:", error);
+                        }
                       }}
                     >
                       Create Goal →

@@ -70,6 +70,8 @@ ${categoryList}
 IMPORTANT: 
 - Income categories: Salary, Freelance Income, Business Income, Investment Income, Other Income
 - Expense categories: Groceries, Dining, Transport, Rent, Entertainment, Utilities, Healthcare, etc.
+- Nigerian POS Rule: Transfers of 1,000-5,000 Naira ending in 100/200, or 5,000-10,000 ending in 200, are usually POS Agent cash withdrawals. Categorize these as "Transport" or "Other Expense" unless specified otherwise.
+- Look for recurring names/descriptions to ensure consistent categorization.
 
 Return JSON array with format:
 [{ "description": "...", "category": "Groceries", "confidence": 0.9 }]
@@ -105,10 +107,8 @@ ${JSON.stringify(
     }));
   }
   
-  const cleaned = response.replace(/```json\n?|\n?```/g, "");
-
   try {
-    const aiResults = JSON.parse(cleaned);
+    const aiResults = JSON.parse(response);
 
     return transactions.map((t) => {
       const aiResult = aiResults.find(

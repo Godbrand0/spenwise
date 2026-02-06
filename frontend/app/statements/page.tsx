@@ -214,7 +214,7 @@ export default function StatementsPage() {
                 <h3 className="text-xl font-bold text-text-primary mb-2">
                   Need More Analysis?
                 </h3>
-                <p className="text-sm text-text-secondary max-w-xl leading-relaxed">
+                <p className="text-sm text-text-secondary leading-relaxed">
                   Keep your dashboard up to date by uploading your latest statements. 
                   Spenwise automatically categorizes your spending and updates your tax estimations.
                 </p>
