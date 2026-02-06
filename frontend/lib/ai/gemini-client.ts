@@ -3,26 +3,38 @@ import { GoogleGenAI } from "@google/genai";
 // The client gets the API key from the environment variable `GEMINI_API_KEY`.
 const ai = new GoogleGenAI({});
 
-export async function callGemini(prompt: string, systemInstruction?: string) {
+export async function callGemini(
+  prompt: string,
+  systemInstruction?: string,
+): Promise<string> {
   const startTime = Date.now();
 
-  const contents = systemInstruction
-    ? `${systemInstruction}\n\n${prompt}`
-    : prompt;
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents,
-  });
+  try {
+    const contents = systemInstruction
+      ? `${systemInstruction}\n\n${prompt}`
+      : prompt;
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents,
+    });
 
-  // Track usage
-  await logTokenUsage({
-    inputTokens: 0, // Usage metadata not available in this SDK version
-    outputTokens: 0,
-    latency: Date.now() - startTime,
-    timestamp: new Date(),
-  });
+    if (!response || !response.text) {
+      throw new Error("Invalid response from Gemini API");
+    }
 
-  return response.text;
+    // Track usage
+    await logTokenUsage({
+      inputTokens: 0, // Usage metadata not available in this SDK version
+      outputTokens: 0,
+      latency: Date.now() - startTime,
+      timestamp: new Date(),
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Error calling Gemini API:", error);
+    throw error;
+  }
 }
 
 // Track daily token usage

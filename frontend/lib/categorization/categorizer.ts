@@ -92,7 +92,19 @@ ${JSON.stringify(
 )}
 `;
 
-  const response = await callGemini(prompt);
+  let response: string;
+  
+  try {
+    response = await callGemini(prompt);
+  } catch (error) {
+    console.error("AI categorization failed:", error);
+    return transactions.map((t) => ({
+      ...t,
+      category: undefined,
+      confidence: 0,
+    }));
+  }
+  
   const cleaned = response.replace(/```json\n?|\n?```/g, "");
 
   try {

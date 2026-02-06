@@ -58,6 +58,32 @@ export default function AnalysisPage({
 
   const supabase = createBrowserClient();
 
+  // Generate AI insights and suggestions - moved before useEffect to fix hoisting issue
+  const generateAIInsights = async (transactionsData: any[]) => {
+    setAiLoading(true);
+    try {
+      // Call the statement analysis API to generate and store analysis
+      const response = await fetch(`/api/statements/${statementId}/analysis`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiInsights(data.insights || "");
+        setAiSuggestions(data.suggestions || []);
+      } else {
+        console.error("AI API returned error status:", response.status);
+      }
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
     const fetchData = async () => {
@@ -141,7 +167,7 @@ export default function AnalysisPage({
       }
     };
     fetchData();
-  }, [statementId]);
+  }, [statementId, supabase]); // Added supabase to dependencies
 
   if (!isMounted) return null;
 
@@ -167,31 +193,6 @@ export default function AnalysisPage({
     );
   }
 
-  // Generate AI insights and suggestions
-  const generateAIInsights = async (transactionsData: any[]) => {
-    setAiLoading(true);
-    try {
-      // Call the statement analysis API to generate and store analysis
-      const response = await fetch(`/api/statements/${statementId}/analysis`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAiInsights(data.insights || "");
-        setAiSuggestions(data.suggestions || []);
-      } else {
-        console.error("AI API returned error status:", response.status);
-      }
-    } catch (error) {
-      console.error("Error generating AI insights:", error);
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   console.log("Analysis page - loading check, loading:", loading);
   if (loading) {
@@ -345,8 +346,8 @@ export default function AnalysisPage({
             <div className="w-1 h-4 bg-blue-500 rounded-full" />
             Spending Distribution
           </h3>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[350px] w-full min-h-[350px]">
+            <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
                   data={categoryData}
@@ -405,8 +406,8 @@ export default function AnalysisPage({
             <div className="w-1 h-4 bg-indigo-500 rounded-full" />
             Monthly Comparison
           </h3>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[350px] w-full min-h-[350px]">
+            <ResponsiveContainer width="100%" height={350}>
               <BarChart data={monthlyData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
