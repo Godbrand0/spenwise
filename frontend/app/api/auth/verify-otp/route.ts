@@ -156,19 +156,19 @@ export async function POST(request: NextRequest) {
     // If sign in failed, try to create the user
     // Use admin.auth.createUser instead of signUp to bypass Supabase's internal SMTP
     // This allows us to use our own Nodemailer verification flow
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        firstName: firstName || email.split("@")[0],
-        email_verified: true,
-      },
-    });
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          firstName: firstName || email.split("@")[0],
+          email_verified: true,
+        },
+      });
 
     console.log("Account creation result:", {
       hasUser: !!authData.user,
-      hasSession: !!authData.session,
       authError,
     });
 
@@ -207,32 +207,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If user was just created, they should have a session
-    if (authData.user && authData.session) {
-      console.log("User account created and signed in successfully");
-      return NextResponse.json(
-        {
-          success: true,
-          message: "Email verified and account created successfully!",
-          verified: true,
-          user: authData.user,
-          session: authData.session,
-        },
-        { status: 200 },
-      );
-    }
-
-    // If user was created but no session (email verification required), try to sign in
-    if (authData.user && !authData.session) {
-      console.log("User created but no session, attempting to sign in...");
-      const { data: retrySignInData, error: retrySignInError } =
+    // If user was created, try to sign in to get a session
+    if (authData.user) {
+      console.log("User created, attempting to sign in...");
+      const { data: signInData, error: signInError } =
         await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-      if (retrySignInError) {
-        console.error("Retry sign-in error:", retrySignInError);
+      if (signInError) {
+        console.error("Sign-in error after user creation:", signInError);
         return NextResponse.json(
           {
             success: true,
@@ -244,13 +229,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      console.log("User account created and signed in successfully");
       return NextResponse.json(
         {
           success: true,
-          message: "Email verified and signed in successfully!",
+          message: "Email verified and account created successfully!",
           verified: true,
-          user: retrySignInData.user,
-          session: retrySignInData.session,
+          user: signInData.user,
+          session: signInData.session,
         },
         { status: 200 },
       );
