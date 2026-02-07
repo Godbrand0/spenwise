@@ -193,10 +193,11 @@ export default function UploadPage() {
           className={`border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 relative z-10 ${
             file
               ? "border-primary bg-primary-lighter"
-              : "border-border hover:border-primary/50 hover:bg-secondary-medium/30"
+              : "border-border hover:border-primary/50 hover:bg-secondary-medium/30 cursor-pointer"
           }`}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onClick={() => !file && document.getElementById("file-input")?.click()}
         >
           <input
             id="file-input"

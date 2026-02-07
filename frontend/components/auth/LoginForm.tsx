@@ -43,7 +43,7 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in w-full">
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">Email Address</label>
@@ -53,7 +53,7 @@ export const LoginForm: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary placeholder:pl-10 outline-none transition-all"
               placeholder="name@example.com"
               required
             />
@@ -68,7 +68,7 @@ export const LoginForm: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary placeholder:pl-10 outline-none transition-all"
               placeholder="••••••••"
               required
             />

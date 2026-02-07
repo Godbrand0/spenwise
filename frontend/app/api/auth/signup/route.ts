@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/database/server";
-import { Resend } from "resend";
-import { EmailTemplate } from "@/components/email-template";
+import { sendOTPEmail } from "@/lib/email/nodemailer";
 import { generateSecureOTP } from "@/lib/otp";
-import { render } from "@react-email/render";
 
 export async function POST(request: NextRequest) {
   try {
@@ -97,64 +95,26 @@ export async function POST(request: NextRequest) {
     }
     console.log("OTP stored successfully");
 
-    // Initialize Resend with API key (done at runtime, not build time)
-    console.log("Initializing Resend...");
-    console.log("RESEND_API_KEY exists:", !!process.env.RESEND_API_KEY);
-    console.log(
-      "RESEND_API_KEY format:",
-      process.env.RESEND_API_KEY
-        ? process.env.RESEND_API_KEY.substring(0, 10) + "..."
-        : "undefined",
-    );
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    console.log("Resend initialized");
-
-    // Send OTP via Resend with custom template
-    console.log("Sending email via Resend...");
-
-    // Render the React component to HTML
-    const emailHtml = await render(
-      EmailTemplate({
-        otp,
-        firstName: firstName || email.split("@")[0],
-      }),
-    );
-
-    console.log("Email template rendered successfully");
-
-    // Log email details for debugging
-    console.log("Email details:", {
-      from: "Spenwise <onboarding@resend.dev>",
-      to: [email],
+    // Send OTP via Nodemailer
+    console.log("Sending email via Nodemailer...");
+    const { success: emailSuccess, error: emailError, data: emailData } = await sendOTPEmail({
+      to: email,
       subject: "Verify Your Email - Spenwise",
-      isTestEmail: email === "thompsoneregha005@gmail.com",
+      otp,
+      firstName: firstName || email.split("@")[0],
     });
 
-    const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Spenwise <onboarding@resend.dev>",
-      to: [email],
-      subject: "Verify Your Email - Spenwise",
-      html: emailHtml,
-    });
-
-    if (emailError) {
-      console.error("Resend error:", emailError);
-      console.error("Full error details:", JSON.stringify(emailError, null, 2));
-      console.error("Attempted to send to:", email);
-      console.error(
-        "Is this the test email?",
-        email === "thompsoneregha005@gmail.com",
-      );
+    if (!emailSuccess) {
+      console.error("Nodemailer error:", emailError);
       return NextResponse.json(
         {
           error: "Failed to send verification email. Please try again.",
-          details: emailError.message,
+          details: emailError instanceof Error ? emailError.message : "Unknown error",
         },
         { status: 500 },
       );
     }
-    console.log("Email sent successfully:", emailData);
-    console.log("Email ID:", emailData?.id);
+    console.log("Email sent successfully");
 
     // User creation is now handled during verification
     // This avoids conflicts and ensures the user is only created after email verification
@@ -163,7 +123,6 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: "Verification code sent. Please check your email.",
-        emailId: emailData?.id,
       },
       { status: 200 },
     );

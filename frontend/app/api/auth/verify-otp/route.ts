@@ -154,18 +154,15 @@ export async function POST(request: NextRequest) {
     }
 
     // If sign in failed, try to create the user
-    console.log(
-      "User doesn't exist or sign in failed, attempting to create user...",
-    );
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // Use admin.auth.createUser instead of signUp to bypass Supabase's internal SMTP
+    // This allows us to use our own Nodemailer verification flow
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
-      options: {
-        emailRedirectTo: undefined,
-        data: {
-          firstName: firstName || email.split("@")[0],
-          email_verified: true, // Mark as verified since OTP was valid
-        },
+      email_confirm: true,
+      user_metadata: {
+        firstName: firstName || email.split("@")[0],
+        email_verified: true,
       },
     });
 

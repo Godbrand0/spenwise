@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
-import { UserPlus, Mail, Lock, Chrome, ShieldCheck } from "lucide-react";
+import { UserPlus, Mail, Lock, Chrome, ShieldCheck, RefreshCw } from "lucide-react";
 
 export const SignupForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -12,7 +12,18 @@ export const SignupForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"signup" | "verify">("signup");
+  const [resendTimer, setResendTimer] = useState(0);
   const supabase = createClient();
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,10 +32,6 @@ export const SignupForm: React.FC = () => {
 
     try {
       console.log("Attempting signup with email:", email);
-      console.log(
-        "Is this the test email?",
-        email === "thompsoneregha005@gmail.com",
-      );
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
@@ -33,20 +40,17 @@ export const SignupForm: React.FC = () => {
         body: JSON.stringify({
           email,
           password,
-          firstName: firstName || email.split("@")[0], // Use provided firstName or extract from email
+          firstName: firstName || email.split("@")[0],
         }),
       });
 
-      console.log("Signup response status:", response.status);
       const data = await response.json();
-      console.log("Signup response data:", data);
 
-      // Check if the response indicates success (even if status is not 200)
       if (data.success || response.ok) {
         console.log("Signup successful, switching to verify view");
         setView("verify");
+        setResendTimer(60); // 60 second cooldown
       } else {
-        console.error("Signup failed with error:", data.error);
         setError(data.error || "Signup failed");
       }
     } catch (err) {
@@ -54,6 +58,39 @@ export const SignupForm: React.FC = () => {
       setError("An unexpected error occurred. Please try again.");
     }
 
+    setLoading(false);
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName: firstName || email.split("@")[0],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success || response.ok) {
+        setResendTimer(60);
+        console.log("OTP Resent successfully");
+      } else {
+        setError(data.error || "Failed to resend code");
+      }
+    } catch (err) {
+      setError("Failed to resend verification code.");
+    }
     setLoading(false);
   };
 
@@ -187,12 +224,21 @@ export const SignupForm: React.FC = () => {
           </button>
         </form>
 
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-4">
+          <button
+            onClick={handleResendOtp}
+            disabled={loading || resendTimer > 0}
+            className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest hover:text-primary-light transition-colors disabled:text-text-muted"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            {resendTimer > 0 ? `Resend Code in ${resendTimer}s` : "Resend Verification Code"}
+          </button>
+          
           <button
             onClick={() => setView("signup")}
-            className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors"
+            className="text-text-muted text-[10px] font-bold uppercase tracking-widest hover:text-text-primary transition-colors"
           >
-            Back to Signup
+            Change Email Identity
           </button>
         </div>
       </div>
@@ -207,12 +253,12 @@ export const SignupForm: React.FC = () => {
             Email Address
           </label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary " />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl text-sm text-text-primary focus:border-primary placeholder:pl-10 outline-none transition-all"
               placeholder="name@example.com"
               required
             />
@@ -227,7 +273,7 @@ export const SignupForm: React.FC = () => {
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 text-sm text-text-primary focus:border-primary outline-none transition-all"
+            className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 text-sm text-text-primary focus:border-primary placeholder:pl-10 outline-none transition-all"
             placeholder="John"
           />
         </div>
@@ -242,7 +288,7 @@ export const SignupForm: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary outline-none transition-all"
+              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary placeholder:pl-12 outline-none transition-all"
               placeholder="••••••••"
               required
             />

@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EmailTemplate } from '@/components/email-template';
-import { Resend } from 'resend';
+import { sendOTPEmail } from '@/lib/email/nodemailer';
 
 export async function POST(request: NextRequest) {
   try {
-    // Initialize Resend with API key (done at runtime, not build time)
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
     const { email, otp, firstName } = await request.json();
 
     // Validate required fields
@@ -17,16 +13,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await resend.emails.send({
-      from: 'Spenwise <onboarding@resend.dev>',
-      to: [email],
+    const { success, error, data } = await sendOTPEmail({
+      to: email,
       subject: 'Verify Your Email - Spenwise',
-      react: EmailTemplate({ otp, firstName }),
+      otp,
+      firstName,
     });
 
-    if (error) {
-      console.error('Resend error:', error);
-      return NextResponse.json(error, { status: 400 });
+    if (!success) {
+      console.error('Nodemailer error:', error);
+      return NextResponse.json({ error: 'Failed to send verification email' }, { status: 500 });
     }
 
     return NextResponse.json(data, { status: 200 });
