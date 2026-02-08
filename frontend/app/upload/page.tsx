@@ -83,7 +83,11 @@ export default function UploadPage() {
         setExtractedData(data);
       } else {
         setUploadStatus("error");
-        setErrorMessage(data.error || `Upload failed with status ${response.status}`);
+        // Combine error and details for better debugging
+        const fullError = data.details 
+          ? `${data.error}: ${data.details}` 
+          : (data.error || `Upload failed with status ${response.status}`);
+        setErrorMessage(fullError);
       }
     } catch (error) {
       console.error("Upload error details:", error);

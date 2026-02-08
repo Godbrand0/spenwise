@@ -54,9 +54,12 @@ export async function POST(req: NextRequest) {
     const { data: existingUser, error: userCheckError } =
       await getUserById(userId);
     if (userCheckError) {
-      console.error("Error checking user:", userCheckError);
+      console.error("[API Upload] Error checking user:", userCheckError);
       return NextResponse.json(
-        { error: "Failed to verify user" },
+        { 
+          error: "Failed to verify user",
+          details: userCheckError instanceof Error ? userCheckError.message : String(userCheckError)
+        },
         { status: 500 },
       );
     }
@@ -100,11 +103,22 @@ export async function POST(req: NextRequest) {
     const uint8Array = new Uint8Array(buffer);
 
     // Dynamically import PDF.js to avoid top-level crashes in serverless
+    console.log("[API Upload] Loading PDF.js...");
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    
+    if (!pdfjsLib.getDocument) {
+      console.error("[API Upload] pdfjsLib.getDocument is missing. Module exports:", Object.keys(pdfjsLib));
+      throw new Error("PDF processing library failed to load correctly");
+    }
 
-    // Load PDF document
-    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+    console.log("[API Upload] Initializing PDF loading task...");
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: uint8Array,
+      useSystemFonts: true,
+      disableFontFace: true, // Often needed in serverless environments
+    });
     const pdf = await loadingTask.promise;
+    console.log(`[API Upload] PDF loaded successfully. Pages: ${pdf.numPages}`);
 
     // Extract text from all pages
     let fullText = "";
@@ -145,16 +159,21 @@ export async function POST(req: NextRequest) {
       closing_balance: metadata.closing_balance || undefined,
     };
 
+    console.log("[API Upload] Creating statement record in database...");
     const { data: statement, error: statementError } =
       await createStatement(statementData);
 
     if (statementError) {
-      console.error("Error creating statement record:", statementError);
+      console.error("[API Upload] Error creating statement record:", statementError);
       return NextResponse.json(
-        { error: "Failed to save statement metadata" },
+        { 
+          error: "Failed to save statement metadata",
+          details: statementError.message || "Database insertion failed"
+        },
         { status: 500 },
       );
     }
+    console.log(`[API Upload] Statement saved successfully. ID: ${statement?.id}`);
 
     return NextResponse.json({
       text: fullText,
