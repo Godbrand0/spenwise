@@ -116,12 +116,12 @@ export async function POST(req: NextRequest) {
     console.log("[API Upload] Loading PDF.js...");
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
     
-    // Disable workers in serverless environments to avoid module path issues
+    // Use a CDN for the worker in serverless environments to avoid path issues
     // @ts-ignore
     if (!pdfjsLib.GlobalWorkerOptions.workerPort) {
-      console.log("[API Upload] Disabling PDF.js workers for serverless...");
+      console.log("[API Upload] Setting PDF.js worker source to CDN...");
       // @ts-ignore
-      pdfjsLib.GlobalWorkerOptions.workerSrc = false;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.530/legacy/build/pdf.worker.min.mjs`;
     }
 
     if (!pdfjsLib.getDocument) {
