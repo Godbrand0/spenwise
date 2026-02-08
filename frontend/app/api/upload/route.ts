@@ -102,6 +102,16 @@ export async function POST(req: NextRequest) {
     const buffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
 
+    // Polyfill DOMMatrix for Node.js environments (required by PDF.js v4+)
+    if (typeof global.DOMMatrix === "undefined") {
+      // @ts-ignore
+      global.DOMMatrix = class DOMMatrix {
+        constructor() {
+          // Minimal mock implementation
+        }
+      };
+    }
+
     // Dynamically import PDF.js to avoid top-level crashes in serverless
     console.log("[API Upload] Loading PDF.js...");
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
