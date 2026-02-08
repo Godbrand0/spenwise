@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
 import { createServerClient } from "@/lib/database/server";
 import { createStatement, getUserById, createUser } from "@/lib/database/utils";
 
@@ -9,10 +7,18 @@ import { createStatement, getUserById, createUser } from "@/lib/database/utils";
 // pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.legacy.min.js`;
 
 export async function GET() {
+  const envStatus = {
+    supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    geminiKey: !!process.env.GEMINI_API_KEY,
+    appUrl: !!process.env.NEXT_PUBLIC_APP_URL,
+  };
+
   return NextResponse.json({
     status: "active",
     endpoint: "/api/upload",
     methods: ["POST", "GET"],
+    env: envStatus,
     timestamp: new Date().toISOString(),
   });
 }
@@ -93,6 +99,9 @@ export async function POST(req: NextRequest) {
     const buffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
 
+    // Dynamically import PDF.js to avoid top-level crashes in serverless
+    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
     // Load PDF document
     const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
     const pdf = await loadingTask.promise;
@@ -107,7 +116,7 @@ export async function POST(req: NextRequest) {
 
       // Extract text items
       const pageText = textContent.items
-        .filter((item: any): item is TextItem => "str" in item)
+        .filter((item: any) => "str" in item)
         .map((item: any) => item.str)
         .join(" ");
 
