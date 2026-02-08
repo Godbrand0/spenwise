@@ -112,16 +112,17 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // Use CommonJS versions of PDF.js to avoid ESM loader issues (like https protocol restrictions)
-    console.log("[API Upload] Loading PDF.js via createRequire...");
-    const { createRequire } = await import("module");
-    const require = createRequire(import.meta.url);
-    const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
-
-    if (!pdfjsLib.getDocument) {
-      console.error("[API Upload] pdfjsLib.getDocument is missing. Module exports:", Object.keys(pdfjsLib));
-      throw new Error("PDF processing library failed to load correctly");
-    }
+    // Use ESM versions of PDF.js
+    console.log("[API Upload] Loading PDF.js...");
+    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const path = await import("path");
+    
+    // Set worker source to local filesystem path for Vercel compatibility
+    // Use the absolute path to ensure it's found in the serverless environment
+    const workerPath = path.join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs");
+    console.log(`[API Upload] Using worker path: ${workerPath}`);
+    // @ts-ignore
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
 
     console.log("[API Upload] Initializing PDF loading task...");
     const loadingTask = pdfjsLib.getDocument({ 
