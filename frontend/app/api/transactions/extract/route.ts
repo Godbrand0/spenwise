@@ -99,7 +99,10 @@ export async function POST(req: NextRequest) {
 
     // Trigger AI analysis generation for this statement (async, non-blocking)
     // This will generate and store insights and suggestions in the database
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/statements/${statementId}/analysis`, {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const analysisUrl = `${baseUrl.replace(/\/$/, '')}/api/statements/${statementId}/analysis`;
+    
+    fetch(analysisUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -110,7 +113,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Trigger user-level analysis update (async, non-blocking)
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analysis/user`, {
+    const userAnalysisUrl = `${baseUrl.replace(/\/$/, '')}/api/analysis/user`;
+    
+    fetch(userAnalysisUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

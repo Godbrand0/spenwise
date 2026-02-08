@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
 import { createServerClient } from "@/lib/database/server";
@@ -7,7 +8,22 @@ import { createStatement, getUserById, createUser } from "@/lib/database/utils";
 // Set worker source
 // pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.legacy.min.js`;
 
+export async function GET() {
+  return NextResponse.json({
+    status: "active",
+    endpoint: "/api/upload",
+    methods: ["POST", "GET"],
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export async function POST(req: NextRequest) {
+  const headersList = await headers();
+  const origin = headersList.get("origin");
+  const host = headersList.get("host");
+
+  console.log(`[API Upload] POST request received from ${origin} to ${host}`);
+
   try {
     const formData = await req.formData();
     const file = formData.get("statement") as File;
