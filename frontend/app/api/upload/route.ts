@@ -116,6 +116,14 @@ export async function POST(req: NextRequest) {
     console.log("[API Upload] Loading PDF.js...");
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
     
+    // Disable workers in serverless environments to avoid module path issues
+    // @ts-ignore
+    if (!pdfjsLib.GlobalWorkerOptions.workerPort) {
+      console.log("[API Upload] Disabling PDF.js workers for serverless...");
+      // @ts-ignore
+      pdfjsLib.GlobalWorkerOptions.workerSrc = false;
+    }
+
     if (!pdfjsLib.getDocument) {
       console.error("[API Upload] pdfjsLib.getDocument is missing. Module exports:", Object.keys(pdfjsLib));
       throw new Error("PDF processing library failed to load correctly");
