@@ -8,12 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const { email, otp, password, firstName } = await request.json();
 
-    console.log("Verify OTP request received:", {
-      email,
-      otp: otp ? "***" : null,
-      password: password ? "***" : null,
-      firstName,
-    });
+    
 
     // Validate input
     if (!email || !otp) {
