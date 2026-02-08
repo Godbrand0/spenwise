@@ -112,17 +112,11 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // Dynamically import PDF.js to avoid top-level crashes in serverless
-    console.log("[API Upload] Loading PDF.js...");
-    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    
-    // Use a CDN for the worker in serverless environments to avoid path issues
-    // @ts-ignore
-    if (!pdfjsLib.GlobalWorkerOptions.workerPort) {
-      console.log("[API Upload] Setting PDF.js worker source to CDN...");
-      // @ts-ignore
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.530/legacy/build/pdf.worker.min.mjs`;
-    }
+    // Use CommonJS versions of PDF.js to avoid ESM loader issues (like https protocol restrictions)
+    console.log("[API Upload] Loading PDF.js via createRequire...");
+    const { createRequire } = await import("module");
+    const require = createRequire(import.meta.url);
+    const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 
     if (!pdfjsLib.getDocument) {
       console.error("[API Upload] pdfjsLib.getDocument is missing. Module exports:", Object.keys(pdfjsLib));
