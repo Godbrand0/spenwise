@@ -68,18 +68,31 @@ export default function UploadPage() {
         body: formData,
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        throw new Error(`Server returned ${response.status}: ${text.slice(0, 100)}`);
+      }
 
       if (response.ok) {
         setUploadStatus("success");
         setExtractedData(data);
       } else {
         setUploadStatus("error");
-        setErrorMessage(data.error || "Failed to upload file");
+        setErrorMessage(data.error || `Upload failed with status ${response.status}`);
       }
     } catch (error) {
+      console.error("Upload error details:", error);
       setUploadStatus("error");
-      setErrorMessage("An unexpected error occurred");
+      setErrorMessage(
+        error instanceof Error 
+          ? error.message 
+          : "An unexpected network or parsing error occurred"
+      );
     } finally {
       setUploading(false);
     }
