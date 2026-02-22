@@ -2,7 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
-import { UserPlus, Mail, Lock, Chrome, ShieldCheck, RefreshCw } from "lucide-react";
+import {
+  UserPlus,
+  Mail,
+  Lock,
+  Chrome,
+  ShieldCheck,
+  RefreshCw,
+} from "lucide-react";
+import { Input } from "@/components/ui/Input";
 
 export const SignupForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -63,7 +71,7 @@ export const SignupForm: React.FC = () => {
 
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
-    
+
     setLoading(true);
     setError(null);
 
@@ -185,7 +193,9 @@ export const SignupForm: React.FC = () => {
           <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center border border-success/20 mx-auto mb-6 shadow-xl shadow-success/10">
             <ShieldCheck className="text-success w-8 h-8" />
           </div>
-          <h3 className="text-xl font-bold text-text-primary">Verify Your Identity</h3>
+          <h3 className="text-xl font-bold text-text-primary">
+            Verify Your Identity
+          </h3>
           <p className="text-text-secondary text-sm leading-relaxed">
             A 6-digit verification code has been dispatched to{" "}
             <span className="text-primary font-bold">{email}</span>.
@@ -230,10 +240,12 @@ export const SignupForm: React.FC = () => {
             disabled={loading || resendTimer > 0}
             className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest hover:text-primary-light transition-colors disabled:text-text-muted"
           >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            {resendTimer > 0 ? `Resend Code in ${resendTimer}s` : "Resend Verification Code"}
+            <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+            {resendTimer > 0
+              ? `Resend Code in ${resendTimer}s`
+              : "Resend Verification Code"}
           </button>
-          
+
           <button
             onClick={() => setView("signup")}
             className="text-text-muted text-[10px] font-bold uppercase tracking-widest hover:text-text-primary transition-colors"
@@ -248,52 +260,33 @@ export const SignupForm: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <form onSubmit={handleSignup} className="space-y-4">
-        <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary " />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-secondary-medium/50 border border-border rounded-xl text-sm text-text-primary focus:border-primary placeholder:pl-10 outline-none transition-all"
-              placeholder="name@example.com"
-              required
-            />
-          </div>
-        </div>
+        <Input
+          label="Email Address"
+          icon={<Mail className="w-4 h-4" />}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@example.com"
+          required
+        />
 
-        <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
-            First Name (Optional)
-          </label>
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 text-sm text-text-primary focus:border-primary placeholder:pl-10 outline-none transition-all"
-            placeholder="John"
-          />
-        </div>
+        <Input
+          label="First Name (Optional)"
+          type="text"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          placeholder="John"
+        />
 
-        <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 ml-1">
-            Password
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-secondary-medium/50 border border-border rounded-xl p-3 pl-12 text-sm text-text-primary focus:border-primary placeholder:pl-12 outline-none transition-all"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-        </div>
+        <Input
+          label="Password"
+          icon={<Lock className="w-4 h-4" />}
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
 
         {error && (
           <div className="text-error text-[10px] font-bold uppercase tracking-wider text-center border border-error/20 bg-error/5 p-3 rounded-xl">

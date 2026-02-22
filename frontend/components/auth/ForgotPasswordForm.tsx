@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { KeyRound, Mail, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
@@ -57,20 +58,15 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }
   return (
     <div className="space-y-6 animate-fade-in">
       <form onSubmit={handleReset} className="space-y-4">
-        <div>
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Email Address</label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/[0.02] border border-white/10 rounded-xl p-3 pl-12 text-sm text-white focus:border-blue-500 outline-none transition-all"
-              placeholder="name@example.com"
-              required
-            />
-          </div>
-        </div>
+        <Input
+          label="Email Address"
+          icon={<Mail className="w-4 h-4 text-primary" />}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@example.com"
+          required
+        />
 
         {error && (
           <div className="text-rose-500 text-[10px] font-bold uppercase tracking-wider text-center border border-rose-500/20 bg-rose-500/5 p-3 rounded-xl">
