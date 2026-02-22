@@ -27,8 +27,38 @@ export async function GET(request: Request) {
         },
       }
     )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error && session) {
+      // Upsert user to public.users table
+      const user = session.user
+      if (user) {
+        const email = user.email
+        const full_name = 
+          user.user_metadata?.full_name || 
+          user.user_metadata?.name || 
+          email?.split('@')[0]
+        const avatar_url = 
+          user.user_metadata?.avatar_url || 
+          user.user_metadata?.picture
+
+        if (email) {
+          await supabase.from('users').upsert(
+            {
+              id: user.id,
+              email: email,
+              full_name: full_name,
+              avatar_url: avatar_url,
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'id' }
+          )
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
