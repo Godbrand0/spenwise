@@ -15,11 +15,61 @@ import {
 import Link from "next/link";
 import { FinancialCard } from "@/components/FinancialCard";
 import { createBrowserClient } from "@/lib/database/client";
+import { TaxCalculation } from "@/lib/database/types";
+
+function daysUntil(dateStr: string): number {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-NG", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getPeriodLabel(calc: TaxCalculation): string {
+  if (calc.tax_period === "annual") return `Jan – Dec ${calc.tax_year}`;
+  if (calc.tax_period === "quarterly") {
+    const q = Math.floor(new Date(calc.period_start).getMonth() / 3) + 1;
+    return `Q${q} ${calc.tax_year}`;
+  }
+  return new Date(calc.period_start).toLocaleDateString("en-NG", {
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getTaxTitle(calc: TaxCalculation): string {
+  if (calc.tax_period === "annual") return "Annual Income Tax (PAYE)";
+  if (calc.tax_period === "quarterly") return "Quarterly Tax";
+  return "Monthly Tax";
+}
+
+const TAX_BADGE_LABELS: Record<TaxCalculation["tax_badge"], string> = {
+  "tax-exempt": "Tax Exempt",
+  "low-tax": "Low Tax",
+  "standard-tax": "Standard Tax",
+  "high-tax": "High Tax",
+};
+
+const TAX_BADGE_COLORS: Record<TaxCalculation["tax_badge"], string> = {
+  "tax-exempt": "badge-success",
+  "low-tax": "badge-success",
+  "standard-tax": "badge-warning",
+  "high-tax": "badge-error",
+};
 
 export default function TaxPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [taxCalculations, setTaxCalculations] = useState<TaxCalculation[]>([]);
 
   const supabase = createBrowserClient();
 
@@ -30,13 +80,28 @@ export default function TaxPage() {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        await fetchTaxData(user.id);
+      }
       setTimeout(() => setLoading(false), 800);
     };
     getUser();
   }, []);
 
+  const fetchTaxData = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/tax/estimate?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTaxCalculations(data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching tax data:", error);
+    }
+  };
+
   if (!isMounted) return null;
-  
+
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
@@ -74,6 +139,49 @@ export default function TaxPage() {
     );
   }
 
+  // Derived data from API
+  const latestCalc = taxCalculations[0] ?? null;
+  const pendingCalcs = taxCalculations.filter((c) => c.tax_status !== "paid");
+  const paidCalcs = taxCalculations.filter((c) => c.tax_status === "paid");
+
+  const nextDeadline = pendingCalcs
+    .filter((c) => c.due_date)
+    .sort(
+      (a, b) =>
+        new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime(),
+    )[0];
+
+  // Compliance checklist based on real data
+  const complianceItems = [
+    {
+      label: "Tax Records Found",
+      status: taxCalculations.length > 0,
+    },
+    {
+      label: "Income Classification",
+      status: latestCalc ? latestCalc.gross_income > 0 : false,
+    },
+    {
+      label: "Deduction Validation",
+      status: latestCalc
+        ? latestCalc.consolidated_relief_allowance > 0
+        : false,
+    },
+    {
+      label: "Filing Readiness",
+      status: taxCalculations.some(
+        (c) => c.tax_status === "filed" || c.tax_status === "paid",
+      ),
+    },
+  ];
+
+  const badgeLabel = latestCalc
+    ? TAX_BADGE_LABELS[latestCalc.tax_badge]
+    : "No Data";
+  const badgeClass = latestCalc
+    ? TAX_BADGE_COLORS[latestCalc.tax_badge]
+    : "badge-warning";
+
   return (
     <div className="py-8 space-y-10 animate-fade-in">
       {/* Header */}
@@ -92,9 +200,11 @@ export default function TaxPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="badge badge-success px-4 py-2 border border-success/20">
+          <div
+            className={`badge ${badgeClass} px-4 py-2 border border-success/20`}
+          >
             <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse mr-2" />
-            <span>Fully Compliant</span>
+            <span>{badgeLabel}</span>
           </div>
         </div>
       </div>
@@ -103,20 +213,40 @@ export default function TaxPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <FinancialCard
           title="Estimated Tax"
-          value="₦430,000.00"
-          subValue="Projected for 2026 Tax Year"
+          value={
+            latestCalc
+              ? `₦${latestCalc.estimated_tax.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "—"
+          }
+          subValue={
+            latestCalc ? `Projected for ${latestCalc.tax_year} Tax Year` : "No calculation yet"
+          }
           icon={DollarSign}
         />
         <FinancialCard
           title="Taxable Income"
-          value="₦4,000,000.00"
-          subValue="After all deductions & reliefs"
+          value={
+            latestCalc
+              ? `₦${latestCalc.taxable_income.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "—"
+          }
+          subValue={
+            latestCalc
+              ? "After all deductions & reliefs"
+              : "No data available"
+          }
           icon={FileText}
         />
         <FinancialCard
           title="Next Deadline"
-          value="Jan 31, 2027"
-          subValue="377 days remaining"
+          value={
+            nextDeadline?.due_date ? formatDate(nextDeadline.due_date) : "—"
+          }
+          subValue={
+            nextDeadline?.due_date
+              ? `${daysUntil(nextDeadline.due_date)} days remaining`
+              : "No upcoming deadline"
+          }
           icon={Calendar}
           className="border-amber-500/20"
         />
@@ -125,6 +255,7 @@ export default function TaxPage() {
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {/* Upcoming Obligations */}
           <div className="card-lg bg-surface relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
               <Lock size={120} />
@@ -135,106 +266,95 @@ export default function TaxPage() {
               Upcoming Obligations
             </h3>
 
-            <div className="space-y-4">
-              {[
-                {
-                  title: "Annual Income Tax (PAYE)",
-                  period: "Jan - Dec 2026",
-                  amount: "₦430,000.00",
-                  status: "Pending",
-                  due: "Jan 31, 2027",
-                },
-                {
-                  title: "Value Added Tax (VAT)",
-                  period: "Q2 2026",
-                  amount: "₦12,500.00",
-                  status: "Pending",
-                  due: "Jul 21, 2026",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-center justify-between p-6 rounded-2xl bg-secondary-medium/50 border border-border hover:border-primary/30 transition-all group/item"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary-lighter flex items-center justify-center border border-primary/20">
-                      <FileText className="text-primary w-6 h-6" />
+            {pendingCalcs.length === 0 ? (
+              <p className="text-sm text-text-muted text-center py-8">
+                No pending tax obligations.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {pendingCalcs.map((calc) => (
+                  <div
+                    key={calc.id}
+                    className="flex items-center justify-between p-6 rounded-2xl bg-secondary-medium/50 border border-border hover:border-primary/30 transition-all group/item"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary-lighter flex items-center justify-center border border-primary/20">
+                        <FileText className="text-primary w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-text-primary group-hover/item:text-primary transition-colors">
+                          {getTaxTitle(calc)}
+                        </h4>
+                        <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mt-0.5">
+                          {getPeriodLabel(calc)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-base font-bold text-text-primary group-hover/item:text-primary transition-colors">
-                        {item.title}
-                      </h4>
-                      <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mt-0.5">
-                        {item.period}
-                      </p>
+                    <div className="flex items-center gap-10">
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-text-primary">
+                          ₦{calc.estimated_tax.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest">
+                          {calc.due_date ? `Due ${formatDate(calc.due_date)}` : calc.tax_status}
+                        </p>
+                      </div>
+                      <Link
+                        href="/tax/calculator"
+                        className="p-3 rounded-xl bg-primary/10 text-primary opacity-0 group-hover/item:opacity-100 transition-all hover:bg-primary hover:text-white"
+                      >
+                        <ArrowRight size={20} />
+                      </Link>
                     </div>
                   </div>
-                  <div className="flex items-center gap-10">
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-text-primary">
-                        {item.amount}
-                      </p>
-                      <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest">
-                        Due {item.due}
-                      </p>
-                    </div>
-                    <button className="p-3 rounded-xl bg-primary/10 text-primary opacity-0 group-hover/item:opacity-100 transition-all hover:bg-primary hover:text-white">
-                      <ArrowRight size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
+          {/* Payment History */}
           <div className="card-lg bg-surface">
             <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3">
               <CheckCircle2 className="text-success" size={24} />
               Payment History
             </h3>
-            <div className="space-y-4">
-              {[
-                {
-                  title: "Annual Income Tax",
-                  period: "2025",
-                  amount: "₦352,000.00",
-                  date: "Jan 25, 2026",
-                },
-                {
-                  title: "VAT Settlement",
-                  period: "Q1 2026",
-                  amount: "₦8,400.00",
-                  date: "Apr 15, 2026",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-center justify-between p-5 rounded-2xl bg-success/5 border border-success/10 hover:border-success/30 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                      <CheckCircle2 className="text-success w-5 h-5" />
+
+            {paidCalcs.length === 0 ? (
+              <p className="text-sm text-text-muted text-center py-8">
+                No payment history yet.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {paidCalcs.map((calc) => (
+                  <div
+                    key={calc.id}
+                    className="flex items-center justify-between p-5 rounded-2xl bg-success/5 border border-success/10 hover:border-success/30 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                        <CheckCircle2 className="text-success w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-text-primary">
+                          {getTaxTitle(calc)}
+                        </h4>
+                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">
+                          Settled • {getPeriodLabel(calc)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-text-primary">
-                        {item.title}
-                      </h4>
-                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">
-                        Settled • {item.period}
+                    <div className="text-right">
+                      <p className="text-base font-bold text-success">
+                        ₦{calc.amount_paid.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest">
+                        Confirmed {formatDate(calc.updated_at)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-base font-bold text-success">
-                      {item.amount}
-                    </p>
-                    <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest">
-                      Confirmed {item.date}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -249,9 +369,12 @@ export default function TaxPage() {
               Based on your transaction history, you may be eligible for
               additional consolidated relief allowances and VAT exemptions.
             </p>
-            <button className="w-full btn-primary text-xs uppercase tracking-widest py-3">
+            <Link
+              href="/tax/calculator"
+              className="w-full btn-primary text-xs uppercase tracking-widest py-3 block text-center"
+            >
               Recalculate Savings
-            </button>
+            </Link>
           </div>
 
           <div className="card bg-surface border-border/50">
@@ -259,17 +382,14 @@ export default function TaxPage() {
               Compliance Checklist
             </h4>
             <div className="space-y-5">
-              {[
-                { label: "TIN Verification", status: true },
-                { label: "Income Classification", status: true },
-                { label: "Deduction Validation", status: false },
-                { label: "Filing Readiness", status: false },
-              ].map((item) => (
+              {complianceItems.map((item) => (
                 <div
                   key={item.label}
                   className="flex items-center justify-between"
                 >
-                  <span className="text-xs text-text-secondary font-medium">{item.label}</span>
+                  <span className="text-xs text-text-secondary font-medium">
+                    {item.label}
+                  </span>
                   {item.status ? (
                     <CheckCircle2 size={16} className="text-success shadow-sm" />
                   ) : (

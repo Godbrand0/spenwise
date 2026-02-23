@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { User, LogOut, Menu, X, Bell, LayoutDashboard, FileText, BarChart2, Upload, Receipt, Settings, Target } from 'lucide-react';
+import { User, LogOut, Menu, X, Bell, LayoutDashboard, FileText, BarChart2, Upload, Receipt, Settings, Target, UserCircle } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -122,6 +122,9 @@ export const Navbar: React.FC = () => {
                         <p className="text-[10px] text-text-muted font-black uppercase tracking-widest">Authorized Access</p>
                         <p className="text-sm font-bold text-text-primary truncate">{user.email}</p>
                       </div>
+                      <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-text-secondary hover:bg-primary/10 hover:text-primary transition-all">
+                        <UserCircle className="w-4 h-4" /> Profile
+                      </Link>
                       <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-text-secondary hover:bg-primary/10 hover:text-primary transition-all">
                         <Settings className="w-4 h-4" /> Settings
                       </Link>
