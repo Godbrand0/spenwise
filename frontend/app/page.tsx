@@ -22,6 +22,7 @@ import {
 import { createBrowserClient } from "@/lib/database/client";
 import { useAppSelector } from "@/lib/store/hooks";
 import { FinancialCard } from "@/components/FinancialCard";
+import { calculateTax } from "@/lib/tax/calculator";
 
 export default function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
@@ -69,7 +70,7 @@ export default function Dashboard() {
     }
   };
 
-  const calculateMetrics = (txs: any[]) => {
+  const calculateMetrics = async (txs: any[]) => {
     let income = 0;
     let expense = 0;
     let balance = 0;
@@ -85,11 +86,13 @@ export default function Dashboard() {
       }
     });
 
+    const taxResult = await calculateTax(income);
+
     setMetrics({
       totalBalance: balance,
       monthlyIncome: income,
       monthlyExpense: expense,
-      taxLiability: income * 0.1,
+      taxLiability: taxResult.estimatedTax,
     });
 
     const dummyChart = [

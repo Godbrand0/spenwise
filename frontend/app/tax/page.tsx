@@ -11,11 +11,14 @@ import {
   FileText,
   CheckCircle2,
   Clock,
+  BookOpen,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { FinancialCard } from "@/components/FinancialCard";
 import { createBrowserClient } from "@/lib/database/client";
 import { TaxCalculation } from "@/lib/database/types";
+import { calculateTax } from "@/lib/tax/calculator";
 
 function daysUntil(dateStr: string): number {
   const now = new Date();
@@ -70,6 +73,7 @@ export default function TaxPage() {
   const [loading, setLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [taxCalculations, setTaxCalculations] = useState<TaxCalculation[]>([]);
+  const [dynamicCalculation, setDynamicCalculation] = useState<{grossIncome: number, taxableIncome: number, estimatedTax: number}>({grossIncome: 0, taxableIncome: 0, estimatedTax: 0});
 
   const supabase = createBrowserClient();
 
@@ -81,12 +85,47 @@ export default function TaxPage() {
       } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
-        await fetchTaxData(user.id);
+        await Promise.all([
+          fetchTaxData(user.id),
+          fetchAndCalculateTaxDynamically(user.id)
+        ]);
       }
       setTimeout(() => setLoading(false), 800);
     };
     getUser();
   }, []);
+
+  const fetchAndCalculateTaxDynamically = async (userId: string) => {
+    try {
+      const { data: txData, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error("Error fetching transactions for tax calculation:", error);
+        return;
+      }
+
+      let totalIncome = 0;
+      if (txData) {
+        txData.forEach((tx) => {
+          if (tx.type === "credit") {
+            totalIncome += Number(tx.amount);
+          }
+        });
+      }
+
+      const taxResult = await calculateTax(totalIncome);
+      setDynamicCalculation({
+        grossIncome: taxResult.grossIncome,
+        taxableIncome: taxResult.taxableIncome,
+        estimatedTax: taxResult.estimatedTax,
+      });
+    } catch (error) {
+       console.error("Error calculating dynamic tax:", error);
+    }
+  }
 
   const fetchTaxData = async (userId: string) => {
     try {
@@ -155,17 +194,15 @@ export default function TaxPage() {
   const complianceItems = [
     {
       label: "Tax Records Found",
-      status: taxCalculations.length > 0,
+      status: taxCalculations.length > 0 || dynamicCalculation.grossIncome > 0,
     },
     {
       label: "Income Classification",
-      status: latestCalc ? latestCalc.gross_income > 0 : false,
+      status: dynamicCalculation.grossIncome > 0 ? true : (latestCalc ? latestCalc.gross_income > 0 : false),
     },
     {
       label: "Deduction Validation",
-      status: latestCalc
-        ? latestCalc.consolidated_relief_allowance > 0
-        : false,
+      status: dynamicCalculation.taxableIncome < dynamicCalculation.grossIncome,
     },
     {
       label: "Filing Readiness",
@@ -175,12 +212,9 @@ export default function TaxPage() {
     },
   ];
 
-  const badgeLabel = latestCalc
-    ? TAX_BADGE_LABELS[latestCalc.tax_badge]
-    : "No Data";
-  const badgeClass = latestCalc
-    ? TAX_BADGE_COLORS[latestCalc.tax_badge]
-    : "badge-warning";
+  const badgeEnum = latestCalc?.tax_badge ?? "standard-tax";
+  const badgeLabel = TAX_BADGE_LABELS[badgeEnum as keyof typeof TAX_BADGE_LABELS] || "No Data";
+  const badgeClass = TAX_BADGE_COLORS[badgeEnum as keyof typeof TAX_BADGE_COLORS] || "badge-warning";
 
   return (
     <div className="py-8 space-y-10 animate-fade-in">
@@ -214,26 +248,30 @@ export default function TaxPage() {
         <FinancialCard
           title="Estimated Tax"
           value={
-            latestCalc
+            dynamicCalculation.grossIncome > 0
+              ? `₦${dynamicCalculation.estimatedTax.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : latestCalc
               ? `₦${latestCalc.estimated_tax.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : "—"
+              : "₦0.00"
           }
           subValue={
-            latestCalc ? `Projected for ${latestCalc.tax_year} Tax Year` : "No calculation yet"
+            dynamicCalculation.grossIncome > 0 && dynamicCalculation.estimatedTax === 0
+              ? `Tax Exempt — income below ₦800,000 threshold`
+              : `Projected for ${new Date().getFullYear()} Tax Year`
           }
           icon={DollarSign}
         />
         <FinancialCard
-          title="Taxable Income"
+          title="Income Base"
           value={
-            latestCalc
-              ? `₦${latestCalc.taxable_income.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : "—"
+            dynamicCalculation.grossIncome > 0
+              ? `₦${dynamicCalculation.grossIncome.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : latestCalc
+              ? `₦${latestCalc.gross_income.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "₦0.00"
           }
           subValue={
-            latestCalc
-              ? "After all deductions & reliefs"
-              : "No data available"
+            "Progressive Rate Estimation Base"
           }
           icon={FileText}
         />
@@ -366,8 +404,8 @@ export default function TaxPage() {
               Tax Optimization
             </h4>
             <p className="text-xs text-text-secondary leading-relaxed mb-6">
-              Based on your transaction history, you may be eligible for
-              additional consolidated relief allowances and VAT exemptions.
+              Based on your transaction history, review your income classification
+              and VAT exemptions to ensure accurate progressive tax calculations.
             </p>
             <Link
               href="/tax/calculator"
@@ -406,6 +444,124 @@ export default function TaxPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Nigerian Tax Guide */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Tax Bracket Table */}
+        <div className="card-lg bg-surface">
+          <h3 className="text-xl font-bold text-text-primary mb-2 flex items-center gap-3">
+            <BookOpen className="text-primary" size={22} />
+            2026 Nigerian Income Tax Brackets
+          </h3>
+          <p className="text-xs text-text-muted mb-6 leading-relaxed">
+            Personal Income Tax Act (PITA) — progressive rates applied to income above the ₦800,000 annual exemption.
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-3 text-[10px] font-black text-text-muted uppercase tracking-widest text-left">Annual Income Band</th>
+                  <th className="pb-3 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Rate</th>
+                  <th className="pb-3 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Max Tax in Band</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                <tr>
+                  <td className="py-3 text-xs text-success font-bold">₦0 – ₦800,000</td>
+                  <td className="py-3 text-xs text-success font-black text-right">0% <span className="text-[10px] font-normal text-text-muted">(Exempt)</span></td>
+                  <td className="py-3 text-xs text-text-muted text-right">—</td>
+                </tr>
+                <tr>
+                  <td className="py-3 text-xs text-text-secondary font-medium">₦800,001 – ₦3,000,000</td>
+                  <td className="py-3 text-xs text-text-primary font-black text-right">15%</td>
+                  <td className="py-3 text-xs text-text-muted text-right">₦330,000</td>
+                </tr>
+                <tr>
+                  <td className="py-3 text-xs text-text-secondary font-medium">₦3,000,001 – ₦12,000,000</td>
+                  <td className="py-3 text-xs text-text-primary font-black text-right">18%</td>
+                  <td className="py-3 text-xs text-text-muted text-right">₦1,620,000</td>
+                </tr>
+                <tr>
+                  <td className="py-3 text-xs text-text-secondary font-medium">₦12,000,001 – ₦25,000,000</td>
+                  <td className="py-3 text-xs text-text-primary font-black text-right">21%</td>
+                  <td className="py-3 text-xs text-text-muted text-right">₦2,730,000</td>
+                </tr>
+                <tr>
+                  <td className="py-3 text-xs text-text-secondary font-medium">₦25,000,001 – ₦50,000,000</td>
+                  <td className="py-3 text-xs text-warning font-black text-right">23%</td>
+                  <td className="py-3 text-xs text-text-muted text-right">₦5,750,000</td>
+                </tr>
+                <tr>
+                  <td className="py-3 text-xs text-text-secondary font-medium">Above ₦50,000,000</td>
+                  <td className="py-3 text-xs text-error font-black text-right">25%</td>
+                  <td className="py-3 text-xs text-text-muted text-right">Unlimited</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 p-4 rounded-2xl bg-success/5 border border-success/10">
+            <p className="text-[10px] text-success font-bold uppercase tracking-widest mb-1">Note — CRA Abolished</p>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              The Consolidated Relief Allowance (CRA) has been abolished under the 2025/2026 NTA reforms. The ₦800,000 annual exemption is the sole relief applied to individual income.
+            </p>
+          </div>
+        </div>
+
+        {/* Filing Deadlines */}
+        <div className="card-lg bg-surface space-y-6">
+          <div>
+            <h3 className="text-xl font-bold text-text-primary mb-2 flex items-center gap-3">
+              <Info className="text-primary" size={22} />
+              Filing Deadlines &amp; Key Dates
+            </h3>
+            <p className="text-xs text-text-muted leading-relaxed">
+              Nigerian tax obligations vary by employment type. Know your deadlines to avoid penalties.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-5 rounded-2xl border border-primary/15 bg-primary/5">
+              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">PAYE — Pay-As-You-Earn (Employees)</p>
+              <ul className="space-y-1.5 text-xs text-text-secondary leading-relaxed">
+                <li>• Your employer deducts tax monthly from salary</li>
+                <li>• Employer remits to FIRS/SIRS by the <span className="font-bold text-text-primary">10th of the following month</span></li>
+                <li>• Annual Tax Clearance Certificate (TCC) due <span className="font-bold text-text-primary">31 January</span> each year</li>
+              </ul>
+            </div>
+
+            <div className="p-5 rounded-2xl border border-warning/15 bg-warning/5">
+              <p className="text-[10px] font-black text-warning uppercase tracking-widest mb-2">Self-Assessment — Freelancers &amp; Business Owners</p>
+              <ul className="space-y-1.5 text-xs text-text-secondary leading-relaxed">
+                <li>• File annual self-assessment return by <span className="font-bold text-text-primary">31 March</span> of the following year</li>
+                <li>• Pay estimated tax quarterly via provisional assessment</li>
+                <li>• Register with your State Inland Revenue Service (SIRS)</li>
+              </ul>
+            </div>
+
+            <div className="p-5 rounded-2xl border border-error/15 bg-error/5">
+              <p className="text-[10px] font-black text-error uppercase tracking-widest mb-2">Penalties for Late Filing</p>
+              <ul className="space-y-1.5 text-xs text-text-secondary leading-relaxed">
+                <li>• Late filing: <span className="font-bold text-text-primary">₦50,000</span> for individuals + <span className="font-bold text-text-primary">₦25,000/month</span> continuing</li>
+                <li>• Underpayment interest: <span className="font-bold text-text-primary">CBN Monetary Policy Rate + 15%</span></li>
+                <li>• Failure to file can result in estimated assessment by FIRS</li>
+              </ul>
+            </div>
+
+            <div className="p-5 rounded-2xl border border-border/50 bg-secondary-medium/20">
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">Key Tax Authorities</p>
+              <ul className="space-y-1.5 text-xs text-text-secondary leading-relaxed">
+                <li>• <span className="font-bold text-text-primary">FIRS</span> — Federal Inland Revenue Service (federal taxes)</li>
+                <li>• <span className="font-bold text-text-primary">SIRS</span> — State Inland Revenue Service (personal income tax)</li>
+                <li>• Lagos residents: <span className="font-bold text-text-primary">LIRS</span> (lirs.gov.ng)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

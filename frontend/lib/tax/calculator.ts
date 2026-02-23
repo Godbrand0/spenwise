@@ -13,7 +13,6 @@ export interface TaxConfig {
 export interface TaxCalculationResult {
   grossIncome: number;
   taxableIncome: number;
-  consolidatedReliefAllowance: number;
   personalAllowance: number;
   estimatedTax: number;
   effectiveRate: number;
@@ -28,18 +27,17 @@ export interface TaxCalculationResult {
   taxBadge: "tax-exempt" | "low-tax" | "standard-tax" | "high-tax";
 }
 
-// Default Nigerian tax configuration for 2026
-// Updated to include ₦800,000 tax exemption and maximum 25% rate
+// Default Nigerian tax configuration for 2026 (NTA 2025/2026)
 export const defaultTaxConfig: TaxConfig = {
   taxBrackets: [
-    { min: 800001, max: 1500000, rate: 0.15 },
-    { min: 1500001, max: 2500000, rate: 0.19 },
-    { min: 2500001, max: 3500000, rate: 0.21 },
-    { min: 3500001, max: 5000000, rate: 0.23 },
-    { min: 5000001, max: null, rate: 0.25 },
+    { min: 800000, max: 3000000, rate: 0.15 },
+    { min: 3000000, max: 12000000, rate: 0.18 },
+    { min: 12000000, max: 25000000, rate: 0.21 },
+    { min: 25000000, max: 50000000, rate: 0.23 },
+    { min: 50000000, max: null, rate: 0.25 },
   ],
   personalAllowance: 800000, // First ₦800,000 is tax-exempt
-  reliefAllowancePercent: 20,
+  reliefAllowancePercent: 0, // CRA abolished
 };
 
 export async function calculateTax(
@@ -53,7 +51,6 @@ export async function calculateTax(
     return {
       grossIncome,
       taxableIncome: 0,
-      consolidatedReliefAllowance: 0,
       personalAllowance: 0,
       estimatedTax: 0,
       effectiveRate: 0,
@@ -64,21 +61,10 @@ export async function calculateTax(
     };
   }
 
-  // Calculate consolidated relief allowance (20% of gross income, capped at ₦200,000)
-  // This is only applied to income above the ₦800,000 exemption
-  const incomeAboveExemption = Math.max(
-    0,
-    grossIncome - taxConfig.personalAllowance,
-  );
-  const consolidatedReliefAllowance = Math.min(
-    (incomeAboveExemption * taxConfig.reliefAllowancePercent) / 100,
-    200000,
-  );
-
-  // Calculate taxable income (income above exemption minus relief allowance)
+  // Calculate taxable income (income above exemption)
   const taxableIncome = Math.max(
     0,
-    grossIncome - taxConfig.personalAllowance - consolidatedReliefAllowance,
+    grossIncome - taxConfig.personalAllowance,
   );
 
   // Calculate tax using progressive brackets
@@ -102,15 +88,6 @@ export async function calculateTax(
     });
   }
 
-  // Add consolidated relief allowance if applicable
-  if (consolidatedReliefAllowance > 0) {
-    fullBreakdown.push({
-      bracket: `Consolidated Relief Allowance (20% of income above exemption, capped at ₦200,000)`,
-      amount: consolidatedReliefAllowance,
-      tax: 0,
-    });
-  }
-
   // Add tax brackets
   fullBreakdown.push(...breakdown);
 
@@ -129,7 +106,6 @@ export async function calculateTax(
   return {
     grossIncome,
     taxableIncome,
-    consolidatedReliefAllowance,
     personalAllowance: taxConfig.personalAllowance,
     estimatedTax: totalTax,
     effectiveRate,
