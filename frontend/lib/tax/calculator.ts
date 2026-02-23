@@ -14,6 +14,7 @@ export interface TaxCalculationResult {
   grossIncome: number;
   taxableIncome: number;
   personalAllowance: number;
+  consolidatedReliefAllowance: number;
   estimatedTax: number;
   effectiveRate: number;
   taxCalculationDetails: Array<{
@@ -52,6 +53,7 @@ export async function calculateTax(
       grossIncome,
       taxableIncome: 0,
       personalAllowance: 0,
+      consolidatedReliefAllowance: 0,
       estimatedTax: 0,
       effectiveRate: 0,
       taxCalculationDetails: [],
@@ -107,6 +109,7 @@ export async function calculateTax(
     grossIncome,
     taxableIncome,
     personalAllowance: taxConfig.personalAllowance,
+    consolidatedReliefAllowance: 0, // CRA was abolished in 2025
     estimatedTax: totalTax,
     effectiveRate,
     taxCalculationDetails: fullBreakdown,

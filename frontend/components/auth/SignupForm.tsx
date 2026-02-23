@@ -255,7 +255,7 @@ export const SignupForm: React.FC = () => {
         </div>
       </div>
     );
-  }also
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
