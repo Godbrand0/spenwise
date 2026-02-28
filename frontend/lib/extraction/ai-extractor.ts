@@ -27,7 +27,8 @@ export async function extractWithAI(pdfText: string): Promise<Transaction[]> {
 Your goal is to extract transactions with high precision and identify specific patterns unique to the Nigerian economy.`;
 
   // Safely chunk the text to stay within TPM limits (approx 12k tokens = 48k chars)
-  const maxChunkChars = 30000; 
+  // Reducing to 12k chars to be extremely safe (approx 3k tokens)
+  const maxChunkChars = 12000; 
   const textChunks = chunkText(pdfText, maxChunkChars);
   
   if (textChunks.length > 1) {

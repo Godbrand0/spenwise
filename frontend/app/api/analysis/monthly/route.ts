@@ -60,9 +60,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Calculate date range for the month
+    const dateFrom = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const dateTo = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
     // Fetch transactions for the specified month and year
     const { data: transactionsData, error: transactionsError } =
-      await getTransactionsByUserId(userId, { month, year }, { limit: 10000 });
+      await getTransactionsByUserId(userId, { dateFrom, dateTo }, { limit: 10000 });
 
     if (transactionsError) {
       return NextResponse.json(

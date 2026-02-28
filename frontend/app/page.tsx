@@ -131,14 +131,9 @@ export default function Dashboard() {
       lenderBreakdown: breakdown,
     });
 
-    const dummyChart = [
-      { name: "Jan", income: income * 0.2, expense: expense * 0.2 },
-      { name: "Feb", income: income * 0.3, expense: expense * 0.3 },
-      { name: "Mar", income: income * 0.5, expense: expense * 0.5 },
-    ];
     setChartData(
-      dummyChart.length > 0 && income > 0
-        ? dummyChart
+      income > 0 || expense > 0
+        ? [{ name: "Current", income, expense }]
         : [{ name: "No Data", income: 0, expense: 0 }],
     );
   };
@@ -200,7 +195,6 @@ export default function Dashboard() {
           title="Total Income"
           value={`₦${metrics.monthlyIncome.toLocaleString()}`}
           icon={TrendingUp}
-          trend={{ value: "12%", isPositive: true }}
           className="border-border/50"
         />
 
@@ -208,7 +202,6 @@ export default function Dashboard() {
           title="Total Expenses"
           value={`₦${metrics.monthlyExpense.toLocaleString()}`}
           icon={TrendingDown}
-          trend={{ value: "5%", isPositive: false }}
           className="border-border/50"
         />
 

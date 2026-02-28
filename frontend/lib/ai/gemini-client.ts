@@ -14,13 +14,33 @@ const ai = new GoogleGenAI({
  * Robustly parse JSON from AI response, handling markdown blocks if present.
  */
 export function cleanJson(text: string): string {
-  // 1. Try to find content within markdown code blocks
+  if (!text) return "";
+
+  // 1. Try to find content within complete markdown code blocks
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (jsonMatch && jsonMatch[1]) {
     return jsonMatch[1].trim();
   }
 
-  // 2. If no code blocks, try to find the first '{' or '[' and the last '}' or ']'
+  // 2. Handle cases where the AI output might be truncated (no closing backticks)
+  const truncatedMatch = text.match(/```(?:json)?\s*([\s\S]*)$/);
+  if (truncatedMatch && truncatedMatch[1]) {
+    // If it looks like it started a JSON block but didn't finish, 
+    // we still try to take what we have
+    const content = truncatedMatch[1].trim();
+    if (content.startsWith('[') || content.startsWith('{')) {
+      // Try to find the last valid closing character
+      const lastBracket = content.lastIndexOf(']');
+      const lastBrace = content.lastIndexOf('}');
+      const lastIndex = Math.max(lastBracket, lastBrace);
+      if (lastIndex !== -1) {
+        return content.substring(0, lastIndex + 1);
+      }
+      return content;
+    }
+  }
+
+  // 3. Find the first '{' or '[' and the last '}' or ']'
   const firstBrace = text.indexOf('{');
   const firstBracket = text.indexOf('[');
   const lastBrace = text.lastIndexOf('}');
@@ -29,13 +49,10 @@ export function cleanJson(text: string): string {
   let start = -1;
   let end = -1;
 
-  // Determine if we're looking for an object or an array
   if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
-    // Looks like an object
     start = firstBrace;
     end = lastBrace;
   } else if (firstBracket !== -1) {
-    // Looks like an array
     start = firstBracket;
     end = lastBracket;
   }
@@ -79,14 +96,16 @@ export async function callGemini(
 
     return response.text;
   } catch (error: any) {
+    const status = error.status || error.statusCode;
+
     // Handle rate limiting (status 429)
-    if (error.status === 429 && retries > 0) {
+    if (status === 429 && retries > 0) {
       console.warn(`⚠️ Gemini Rate Limit hit. Retrying in ${backoff}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, backoff));
       return callGemini(prompt, systemInstruction, retries - 1, backoff * 2);
     }
 
-    if (error.status === 429) {
+    if (status === 429) {
       console.warn("⚠️ Gemini API Rate Limit Exceeded. Falling back to Groq...");
       try {
         const groqResult = await callGroq(prompt, systemInstruction);
@@ -98,7 +117,7 @@ export async function callGemini(
     }
 
     console.error("❌ Error calling Gemini API:", error.message || error);
-    if (error.status) console.error("Status Code:", error.status);
+    if (status) console.error("Status Code:", status);
     throw error;
   }
 }
