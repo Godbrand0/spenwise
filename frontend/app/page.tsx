@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   ArrowRight,
   FileText,
+  Landmark,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -23,6 +24,7 @@ import { createBrowserClient } from "@/lib/database/client";
 import { useAppSelector } from "@/lib/store/hooks";
 import { FinancialCard } from "@/components/FinancialCard";
 import { calculateTax } from "@/lib/tax/calculator";
+import { LoanSection } from "@/components/LoanSection";
 
 export default function Dashboard() {
   const [isMounted, setIsMounted] = useState(false);
@@ -33,6 +35,9 @@ export default function Dashboard() {
     monthlyIncome: 0,
     monthlyExpense: 0,
     taxLiability: 0,
+    totalBorrowed: 0,
+    totalRepaid: 0,
+    lenderBreakdown: {} as Record<string, { borrowed: number; repaid: number }>,
   });
   const [chartData, setChartData] = useState<any[]>([]);
 
@@ -77,12 +82,40 @@ export default function Dashboard() {
 
     txs.forEach((tx) => {
       const amount = Number(tx.amount);
-      if (tx.type === "credit") {
+      if (tx.type === "credit" || tx.is_income) {
         income += amount;
         balance += amount;
       } else {
         expense += amount;
         balance -= amount;
+      }
+    });
+
+    // Loan detection logic
+    const loanKeywords = ["lcredit", "okash", "loan credit", "easemoni"];
+    let totalBorrowed = 0;
+    let totalRepaid = 0;
+    const breakdown: Record<string, { borrowed: number; repaid: number }> = {};
+
+    txs.forEach((tx) => {
+      const description = tx.description.toLowerCase();
+      const matchedKeyword = loanKeywords.find((kw) => description.includes(kw));
+
+      if (matchedKeyword) {
+        const amount = Number(tx.amount);
+        const lender = matchedKeyword === "loan credit" ? "General Loan" : matchedKeyword.toUpperCase();
+        
+        if (!breakdown[lender]) {
+          breakdown[lender] = { borrowed: 0, repaid: 0 };
+        }
+
+        if (tx.type === "credit") {
+          totalBorrowed += amount;
+          breakdown[lender].borrowed += amount;
+        } else {
+          totalRepaid += amount;
+          breakdown[lender].repaid += amount;
+        }
       }
     });
 
@@ -93,6 +126,9 @@ export default function Dashboard() {
       monthlyIncome: income,
       monthlyExpense: expense,
       taxLiability: taxResult.estimatedTax,
+      totalBorrowed,
+      totalRepaid,
+      lenderBreakdown: breakdown,
     });
 
     const dummyChart = [
@@ -183,6 +219,16 @@ export default function Dashboard() {
           subValue="VAT & Income Tax estimation"
           className="bg-primary/5 border-primary/20"
         />
+
+        {(metrics.totalBorrowed > 0 || metrics.totalRepaid > 0) && (
+          <FinancialCard
+            title="Net Loan Debt"
+            value={`₦${(metrics.totalBorrowed - metrics.totalRepaid).toLocaleString()}`}
+            icon={Landmark}
+            subValue={`${metrics.totalRepaid >= metrics.totalBorrowed ? 'Fully Repaid' : 'Outstanding Debt'}`}
+            className={metrics.totalRepaid >= metrics.totalBorrowed ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"}
+          />
+        )}
       </div>
 
       {/* Charts Section */}
@@ -307,6 +353,17 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Loan Analytics Section */}
+      {(metrics.totalBorrowed > 0 || metrics.totalRepaid > 0) && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <LoanSection 
+            totalBorrowed={metrics.totalBorrowed}
+            totalRepaid={metrics.totalRepaid}
+            lenderBreakdown={metrics.lenderBreakdown}
+          />
+        </div>
+      )}
 
       {/* Recent Transactions */}
       <div className="card-lg">

@@ -57,6 +57,8 @@ export default function FinancialAnalysisPage() {
   const [aiInsights, setAiInsights] = useState<string>("");
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [monthlyAnalyses, setMonthlyAnalyses] = useState<any[]>([]);
+  const [rowLoading, setRowLoading] = useState<Record<string, boolean>>({});
 
   const supabase = createBrowserClient();
 
@@ -141,12 +143,17 @@ export default function FinancialAnalysisPage() {
           .single();
 
         if (!analysisError && userAnalysis) {
-          // Use stored analysis
           setAiInsights(userAnalysis.ai_insights || "");
           setAiSuggestions(userAnalysis.ai_suggestions || []);
         }
 
-        // Set loading to false first to show the page
+        // Fetch monthly analyses
+        const response = await fetch(`/api/analysis/monthly?userId=${userId}`);
+        if (response.ok) {
+          const { data: analyses } = await response.json();
+          setMonthlyAnalyses(analyses || []);
+        }
+
         setLoading(false);
 
         // If no analysis exists or needs update, generate asynchronously
@@ -609,6 +616,103 @@ export default function FinancialAnalysisPage() {
           )}
         </div>
       )}
+
+      {/* Monthly Comparison Table */}
+      <div className="card-lg bg-surface relative overflow-hidden">
+        <h3 className="text-xl font-bold text-text-primary mb-8 flex items-center gap-3">
+          <div className="w-1.5 h-6 bg-primary rounded-full" />
+          Monthly Intelligence Archive
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="pb-4 text-[10px] font-black text-text-muted uppercase tracking-widest">Period</th>
+                <th className="pb-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Income</th>
+                <th className="pb-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Expenses</th>
+                <th className="pb-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Net Savings</th>
+                <th className="pb-4 text-[10px] font-black text-text-muted uppercase tracking-widest">AI Remark</th>
+                <th className="pb-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {monthlyData.slice().reverse().map((data) => {
+                const [mName, yStr] = data.month.split(" ");
+                const monthNum = new Date(`${mName} 1, 2000`).getMonth() + 1;
+                const yearNum = parseInt(yStr, 10);
+                
+                const analysis = monthlyAnalyses.find(
+                  (a) => a.analysis_month === monthNum && a.analysis_year === yearNum
+                );
+                
+                const rowId = `${monthNum}-${yearNum}`;
+                const isGenerating = rowLoading[rowId];
+
+                return (
+                  <tr key={data.month} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-6 pr-4">
+                      <p className="text-sm font-black text-text-primary uppercase">{data.month}</p>
+                    </td>
+                    <td className="py-6 px-4 text-right">
+                      <p className="text-sm font-bold text-success">₦{data.income.toLocaleString()}</p>
+                    </td>
+                    <td className="py-6 px-4 text-right">
+                      <p className="text-sm font-bold text-error">₦{data.expenses.toLocaleString()}</p>
+                    </td>
+                    <td className="py-6 px-4 text-right">
+                      <p className={`text-sm font-black ${data.savings >= 0 ? 'text-success' : 'text-error'}`}>
+                        ₦{data.savings.toLocaleString()}
+                      </p>
+                    </td>
+                    <td className="py-6 px-6 max-w-xs">
+                      {isGenerating ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                          <span className="text-[10px] font-bold text-primary animate-pulse tracking-widest uppercase">Executing...</span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-text-secondary line-clamp-2 italic leading-relaxed">
+                          {analysis?.ai_remark || "Analysis pending generation..."}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-6 pl-4 text-right">
+                      {!analysis && !isGenerating ? (
+                        <button
+                          onClick={async () => {
+                            setRowLoading(prev => ({ ...prev, [rowId]: true }));
+                            try {
+                              const res = await fetch("/api/analysis/monthly", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ userId: user.id, month: monthNum, year: yearNum }),
+                              });
+                              if (res.ok) {
+                                const { data: newAnalysis } = await res.json();
+                                setMonthlyAnalyses(prev => [...prev, newAnalysis]);
+                              }
+                            } finally {
+                              setRowLoading(prev => ({ ...prev, [rowId]: false }));
+                            }
+                          }}
+                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-primary/20"
+                        >
+                          Generate
+                        </button>
+                      ) : analysis ? (
+                        <div className="flex items-center justify-end gap-2 text-primary">
+                          <Target size={14} />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Analyzed</span>
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Recent Transactions */}
       <div className="space-y-6">
