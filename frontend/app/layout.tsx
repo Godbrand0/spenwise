@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   },
 };
 
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { createServerClient } from "@/lib/database/server";
 
@@ -50,6 +51,7 @@ export default async function RootLayout({
             </div>
           )}
         </StoreProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
