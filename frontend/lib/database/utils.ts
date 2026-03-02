@@ -13,6 +13,7 @@ import {
   CreateFinancialTodoInput,
   UpdateFinancialTodoInput,
   TaxCalculationInput,
+  MonthlyFinancialAnalysis,
 } from "@/lib/database/types";
 
 // User functions
@@ -492,6 +493,56 @@ export async function getSpendingAnalytics(
     };
 
     return { data: analytics, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export async function getMonthlyAnalysisByUserId(
+  userId: string,
+  year?: number,
+): Promise<DatabaseResponse<MonthlyFinancialAnalysis[]>> {
+  try {
+    const supabase = await createServerClient();
+    let query = supabase
+      .from("monthly_financial_analysis")
+      .select("*")
+      .eq("user_id", userId)
+      .order("analysis_year", { ascending: false })
+      .order("analysis_month", { ascending: false });
+
+    if (year) {
+      query = query.eq("analysis_year", year);
+    }
+
+    const { data, error } = await query;
+
+    return { data: data as MonthlyFinancialAnalysis[], error };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export async function upsertMonthlyAnalysis(
+  analysis: Omit<MonthlyFinancialAnalysis, "id" | "created_at" | "updated_at">,
+): Promise<DatabaseResponse<MonthlyFinancialAnalysis>> {
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+      .from("monthly_financial_analysis")
+      .upsert(
+        {
+          ...analysis,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,analysis_month,analysis_year",
+        },
+      )
+      .select()
+      .single();
+
+    return { data: data as MonthlyFinancialAnalysis, error };
   } catch (error) {
     return { data: null, error };
   }

@@ -17,8 +17,8 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
 
       <div className="w-full max-w-[480px] animate-fade-in mx-auto">
         <div className="mb-8 text-center space-y-3">
-          <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-primary/20 mb-6">
-            <span className="text-2xl font-black text-white italic">S</span>
+          <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-primary/20 mb-6 overflow-hidden">
+            <img src="/logo.png" alt="Spenwise Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-text-primary leading-tight">
             {title}

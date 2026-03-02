@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { callGemini } from "@/lib/ai/gemini-client";
+import { callGemini, cleanJson } from "@/lib/ai/gemini-client";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -98,8 +98,8 @@ export async function POST(
       );
     }
 
-    // Prepare transaction summary for AI
-    const transactionSummary = transactions.map((t) => ({
+    // Prepare transaction summary for AI (cap at 100 to stay within TPM limits)
+    const transactionSummary = transactions.slice(0, 100).map((t) => ({
       description: t.description,
       amount: t.amount,
       category: t.category_name,
@@ -133,14 +133,7 @@ export async function POST(
     // Parse AI response
     let parsedResponse;
     try {
-      let cleanedResponse = response?.trim() || "{}";
-      
-      if (cleanedResponse.startsWith("```json")) {
-        cleanedResponse = cleanedResponse.replace(/```json\n?/g, "").replace(/```\n?$/g, "");
-      } else if (cleanedResponse.startsWith("```")) {
-        cleanedResponse = cleanedResponse.replace(/```\n?/g, "").replace(/```\n?$/g, "");
-      }
-      
+      const cleanedResponse = cleanJson(response);
       parsedResponse = JSON.parse(cleanedResponse);
       
       if (!parsedResponse.insights || !Array.isArray(parsedResponse.suggestions)) {

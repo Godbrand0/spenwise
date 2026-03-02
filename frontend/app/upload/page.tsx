@@ -29,8 +29,13 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type !== "application/pdf") {
-        setErrorMessage("Please upload a PDF file");
+      const isPdf = selectedFile.type === "application/pdf";
+      const isCsv = selectedFile.type === "text/csv" || 
+                    selectedFile.type === "application/vnd.ms-excel" ||
+                    selectedFile.name.endsWith(".csv");
+      
+      if (!isPdf && !isCsv) {
+        setErrorMessage("Please upload a PDF or CSV file");
         setUploadStatus("error");
         return;
       }
@@ -198,7 +203,7 @@ export default function UploadPage() {
           Import Financial Data
         </h1>
         <p className="text-text-secondary text-lg  leading-relaxed">
-          Upload your bank statement in PDF format. Spenwise uses secure, private-first AI to categorize transactions without human intervention.
+          Upload your bank statement in PDF or CSV format. Spenwise uses secure, private-first AI to categorize transactions without human intervention.
         </p>
       </div>
 
@@ -219,7 +224,7 @@ export default function UploadPage() {
           <input
             id="file-input"
             type="file"
-            accept=".pdf"
+            accept=".pdf,.csv"
             onChange={handleFileChange}
             className="hidden"
           />
@@ -233,7 +238,7 @@ export default function UploadPage() {
                 {file.name}
               </p>
               <p className="text-sm font-bold text-text-muted uppercase tracking-widest mb-6">
-                {(file.size / 1024 / 1024).toFixed(2)} MB • PDF Document
+                {(file.size / 1024 / 1024).toFixed(2)} MB • {file.name.endsWith('.pdf') ? 'PDF Document' : 'CSV Data'}
               </p>
               <button
                 onClick={() => document.getElementById("file-input")?.click()}
@@ -255,7 +260,7 @@ export default function UploadPage() {
               </p>
               <div className="flex items-center gap-2 text-xs font-bold text-text-muted bg-secondary-medium px-4 py-2 rounded-full">
                 <AlertCircle size={14} />
-                <span>Supports PDF only (Max 10MB)</span>
+                <span>Supports PDF and CSV (Max 10MB)</span>
               </div>
             </div>
           )}

@@ -36,9 +36,14 @@ export async function POST(req: NextRequest) {
     const userId = formData.get("userId") as string;
 
     // Validate
-    if (!file || file.type !== "application/pdf") {
+    const isPdf = file?.type === "application/pdf";
+    const isCsv = file?.type === "text/csv" || 
+                  file?.type === "application/vnd.ms-excel" ||
+                  file?.name.endsWith(".csv");
+
+    if (!file || (!isPdf && !isCsv)) {
       return NextResponse.json(
-        { error: "Invalid file type. Please upload a PDF file." },
+        { error: "Invalid file type. Please upload a PDF or CSV file." },
         { status: 400 },
       );
     }
@@ -98,56 +103,60 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Convert file to buffer
-    const buffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(buffer);
-
-    // Polyfill DOMMatrix for Node.js environments (required by PDF.js v4+)
-    if (typeof global.DOMMatrix === "undefined") {
-      // @ts-ignore
-      global.DOMMatrix = class DOMMatrix {
-        constructor() {
-          // Minimal mock implementation
-        }
-      };
-    }
-
-    // Use ESM versions of PDF.js
-    console.log("[API Upload] Loading PDF.js...");
-    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const path = await import("path");
-    
-    // Set worker source to local filesystem path for Vercel compatibility
-    // Use the absolute path to ensure it's found in the serverless environment
-    const workerPath = path.join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs");
-    console.log(`[API Upload] Using worker path: ${workerPath}`);
-    // @ts-ignore
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
-
-    console.log("[API Upload] Initializing PDF loading task...");
-    const loadingTask = pdfjsLib.getDocument({ 
-      data: uint8Array,
-      useSystemFonts: true,
-      disableFontFace: true, // Often needed in serverless environments
-    });
-    const pdf = await loadingTask.promise;
-    console.log(`[API Upload] PDF loaded successfully. Pages: ${pdf.numPages}`);
-
-    // Extract text from all pages
+    // Extract text based on file type
     let fullText = "";
-    const numPages = pdf.numPages;
+    let numPages = 1;
 
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
+    if (isPdf) {
+      // Convert file to buffer
+      const buffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(buffer);
 
-      // Extract text items
-      const pageText = textContent.items
-        .filter((item: any) => "str" in item)
-        .map((item: any) => item.str)
-        .join(" ");
+      // Polyfill DOMMatrix for Node.js environments (required by PDF.js v4+)
+      if (typeof global.DOMMatrix === "undefined") {
+        // @ts-ignore
+        global.DOMMatrix = class DOMMatrix {
+          constructor() {
+            // Minimal mock implementation
+          }
+        };
+      }
 
-      fullText += pageText + "\n";
+      // Use ESM versions of PDF.js
+      console.log("[API Upload] Loading PDF.js...");
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const path = await import("path");
+      
+      // Set worker source to local filesystem path for Vercel compatibility
+      const workerPath = path.join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs");
+      console.log(`[API Upload] Using worker path: ${workerPath}`);
+      // @ts-ignore
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
+
+      console.log("[API Upload] Initializing PDF loading task...");
+      const loadingTask = pdfjsLib.getDocument({ 
+        data: uint8Array,
+        useSystemFonts: true,
+        disableFontFace: true, 
+      });
+      const pdf = await loadingTask.promise;
+      numPages = pdf.numPages;
+      console.log(`[API Upload] PDF loaded successfully. Pages: ${numPages}`);
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .filter((item: any) => "str" in item)
+          .map((item: any) => item.str)
+          .join(" ");
+        fullText += pageText + "\n";
+      }
+    } else {
+      // Handle CSV
+      console.log("[API Upload] Processing CSV file...");
+      fullText = await file.text();
+      numPages = 1;
     }
 
     // Extract statement metadata from PDF text

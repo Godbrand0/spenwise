@@ -234,3 +234,20 @@ export interface UpdateFinancialTodoInput {
   tags?: string[];
   reminder_settings?: Record<string, any>;
 }
+
+export interface MonthlyFinancialAnalysis {
+  id: string;
+  user_id: string;
+  analysis_month: number;
+  analysis_year: number;
+  total_income: number;
+  total_expenses: number;
+  net_savings: number;
+  transaction_count: number;
+  ai_remark: string;
+  ai_advice: string;
+  ai_suggestions: string[];
+  generated_at: string;
+  created_at: string;
+  updated_at: string;
+}
