@@ -175,7 +175,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row  gap-6">
         {/* Sidebar nav */}
         <aside className="w-full md:w-52 shrink-0">
           <nav className="space-y-1">
