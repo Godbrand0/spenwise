@@ -17,10 +17,6 @@ export const metadata: Metadata = {
   title: "SpendWise AI - Intelligent Financial Management",
   description: "Automatically extract transactions from bank statements, get AI-powered insights, and estimate tax obligations for Nigerian users.",
   icons: {
-    icon: [
-      { url: '/favicon.ico' },
-      { url: '/logo.png', type: 'image/png' },
-    ],
     apple: [
       { url: '/logo.png' },
     ],
