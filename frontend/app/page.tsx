@@ -40,6 +40,7 @@ export default function Dashboard() {
     lenderBreakdown: {} as Record<string, { borrowed: number; repaid: number }>,
   });
   const [chartData, setChartData] = useState<any[]>([]);
+  const [timeframe, setTimeframe] = useState<"daily" | "monthly" | "yearly">("monthly");
 
   const supabase = createBrowserClient();
 
@@ -51,7 +52,7 @@ export default function Dashboard() {
     if (user) {
       fetchDashboardData(user.id);
     }
-  }, [user]);
+  }, [user, timeframe]);
 
   const fetchDashboardData = async (userId: string) => {
     try {
@@ -131,9 +132,66 @@ export default function Dashboard() {
       lenderBreakdown: breakdown,
     });
 
+    // Group transactions by timeframe for the chart
+    const groupedData: Record<string, { income: number; expense: number }> = {};
+    
+    txs.forEach((tx) => {
+      const date = new Date(tx.transaction_date);
+      let key = "";
+      
+      if (timeframe === "daily") {
+        key = date.toISOString().split('T')[0];
+      } else if (timeframe === "monthly") {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      } else {
+        key = `${date.getFullYear()}`;
+      }
+      
+      if (!groupedData[key]) {
+        groupedData[key] = { income: 0, expense: 0 };
+      }
+      
+      const amount = Number(tx.amount);
+      if (tx.type === "credit" || tx.is_income) {
+        groupedData[key].income += amount;
+      } else {
+        groupedData[key].expense += amount;
+      }
+    });
+
+    // Convert to array and sort
+    const formattedChartData = Object.entries(groupedData)
+      .map(([key, data]) => {
+        let name = "";
+        let timestamp = 0;
+
+        if (timeframe === "daily") {
+          const d = new Date(key);
+          name = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          timestamp = d.getTime();
+        } else if (timeframe === "monthly") {
+          const [year, month] = key.split('-').map(Number);
+          const d = new Date(year, month - 1);
+          name = d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+          timestamp = d.getTime();
+        } else {
+          const d = new Date(Number(key), 0);
+          name = key;
+          timestamp = d.getTime();
+        }
+
+        return {
+          name,
+          income: data.income,
+          expense: data.expense,
+          timestamp,
+        };
+      })
+      .sort((a, b) => a.timestamp - b.timestamp);
+
     setChartData(
-      income > 0 || expense > 0
-        ? [{ name: "Current", income, expense }]
+      formattedChartData.length > 0
+        ? formattedChartData
         : [{ name: "No Data", income: 0, expense: 0 }],
     );
   };
@@ -225,22 +283,39 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 card-lg">
+      <div className="w-full">
+        <div className="card-lg">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg font-black uppercase tracking-widest text-text-primary">Cash Flow Intelligence</h3>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Income</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+              <div className="flex bg-secondary-medium/30 p-1 rounded-lg border border-border/50">
+                {(["daily", "monthly", "yearly"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setTimeframe(p)}
+                    className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all ${
+                      timeframe === p
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-text-muted hover:text-text-primary"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-error" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Expense</span>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Income</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-error" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Expense</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="h-[350px] w-full">
+          <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -298,51 +373,6 @@ export default function Dashboard() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card-lg">
-          <h3 className="text-lg font-black uppercase tracking-widest text-text-primary mb-8">
-            Operational
-          </h3>
-          <div className="space-y-4">
-            <Link
-              href="/upload"
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary-medium/20 hover:bg-primary/5 hover:border-primary/30 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-text-secondary group-hover:text-text-primary transition-colors">Import Statements</span>
-              </div>
-              <ArrowRight size={16} className="text-text-muted group-hover:text-primary transition-all group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/analysis"
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary-medium/20 hover:bg-primary/5 hover:border-primary/30 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-text-secondary group-hover:text-text-primary transition-colors">Deep Analysis</span>
-              </div>
-              <ArrowRight size={16} className="text-text-muted group-hover:text-primary transition-all group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/todos"
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary-medium/20 hover:bg-primary/5 hover:border-primary/30 transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-text-secondary group-hover:text-text-primary transition-colors">Compliance Goals</span>
-              </div>
-              <ArrowRight size={16} className="text-text-muted group-hover:text-primary transition-all group-hover:translate-x-1" />
-            </Link>
-          </div>
-          
-          <div className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Pro Tip</p>
-            <p className="text-xs text-text-secondary leading-relaxed font-medium">
-              Upload multiple monthly statements to generate accurate year-over-year tax predictions.
-            </p>
           </div>
         </div>
       </div>

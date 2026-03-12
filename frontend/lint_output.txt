@@ -1,0 +1,39 @@
+
+/home/godbrand/Documents/GitHub/spenwise/frontend/app/page.tsx
+  32:52  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  42:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  52:7   error    Error: Cannot access variable before it is declared
+
+`fetchDashboardData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/home/godbrand/Documents/GitHub/spenwise/frontend/app/page.tsx:52:7
+  50 |   useEffect(() => {
+  51 |     if (user) {
+> 52 |       fetchDashboardData(user.id);
+     |       ^^^^^^^^^^^^^^^^^^ `fetchDashboardData` accessed before it is declared
+  53 |     }
+  54 |   }, [user]);
+  55 |
+
+/home/godbrand/Documents/GitHub/spenwise/frontend/app/page.tsx:56:3
+  54 |   }, [user]);
+  55 |
+> 56 |   const fetchDashboardData = async (userId: string) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 57 |     try {
+     | ^^^^^^^^^
+> 58 |       const { data: txData, error } = await supabase
+     …
+     | ^^^^^^^^^
+> 75 |     }
+     | ^^^^^^^^^
+> 76 |   };
+     | ^^^^^ `fetchDashboardData` is declared here
+  77 |
+  78 |   const calculateMetrics = async (txs: any[]) => {
+  79 |     let income = 0;  react-hooks/immutability
+  54:6   warning  React Hook useEffect has a missing dependency: 'fetchDashboardData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+  78:40  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+
+✖ 5 problems (4 errors, 1 warning)
+
